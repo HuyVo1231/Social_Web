@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String?
+  email String? @unique
+  emailVerified DateTime?
+  image String?
+  imageThumbnail String?
+  phone String?
+  bio String?
+  location String?
+  hashPassword String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversationsIds String[] @db.ObjectId
+  conversations Conversation[] @relation(fields: [conversationsIds], references: [id])
+
+  seenMessageIds String[] @db.ObjectId
+  seenMessages Message[] @relation("Seen",fields: [seenMessageIds], references: [id])
+
+  accounts Account[] 
+  messages Message[]
+
+  likes            Like[]        
+  comments         Comment[]     
+  posts            Post[]     
+
+  friendshipsInitiated Friendship[] @relation("FriendshipInitiator")  
+  friendshipsReceived Friendship[] @relation("FriendshipReceiver")
+
+  sentNotifications Notification[] @relation("SentNotifications")
+  receivedNotifications Notification[] @relation("ReceivedNotifications")
+}
+
+model Notification {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  type       NotificationType
+  content    String
+  createdAt  DateTime @default(now())
+  read       Boolean  @default(false)
+
+  senderId   String   @db.ObjectId
+  sender     User     @relation("SentNotifications", fields: [senderId], references: [id])
+
+  receiverId String   @db.ObjectId
+  receiver   User     @relation("ReceivedNotifications", fields: [receiverId], references: [id])
+
+  friendshipId String? @db.ObjectId
+  friendship   Friendship? @relation("FriendshipNotifications", fields: [friendshipId], references: [id])
+
+  postId       String? @db.ObjectId
+  post         Post?   @relation("PostNotifications", fields: [postId], references: [id])
+}
+
+model Friendship {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  initiatorId String @db.ObjectId
+  initiator User @relation("FriendshipInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+
+  receiverId String @db.ObjectId
+  receiver User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  status FriendshipStatus @default(PENDING)
+
+  notifications Notification[] @relation("FriendshipNotifications")  
+
+  @@unique([initiatorId, receiverId])
+}
+
+model Post {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  body         String   
+  image        String[]
+  createdAt    DateTime  @default(now())  
+  updatedAt    DateTime  @updatedAt 
+
+  userId       String    @db.ObjectId 
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  likes        Like[]   
+  comments     Comment[] 
+
+  notifications Notification[] @relation("PostNotifications")  
+}
+
+
+model Like {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId 
+  postId    String   @db.ObjectId 
+  createdAt DateTime @default(now()) 
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId]) 
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  body      String   
+  createdAt DateTime @default(now())  
+
+  postId    String   @db.ObjectId 
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId    String   @db.ObjectId 
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  type String 
+  provider String
+  providerAccountId String
+  refresh_token String? @db.String
+  access_token String? @db.String
+  expires_at Int?
+  token_type String?
+  scope String?
+  id_token String? @db.String
+  session_state String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Conversation {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  lastMessageAt DateTime @default(now())
+  name String? 
+  isGroup Boolean?
+
+  messagesIds String[] @db.ObjectId
+  messages Message[]
+
+  userIds String[] @db.ObjectId
+  users User[] @relation(fields: [userIds], references: [id])
+}
+
+model Message {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  body String?
+  image String?
+  createdAt DateTime @default(now())
+  seenIds String[] @db.ObjectId
+  seen User[] @relation("Seen", fields: [seenIds], references: [id])
+  
+  conversationId String @db.ObjectId
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  senderId String @db.ObjectId
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  MESSAGE
+  LIKE
+  COMMENT
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
