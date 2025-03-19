@@ -38,9 +38,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Nội dung bình luận không hợp lệ.' }, { status: 400 })
       }
 
+      // Thêm bình luận và trả về kèm user
       const newComment = await prisma.comment.create({
-        data: { body: commentBody, userId: currentUser.id, postId }
+        data: {
+          body: commentBody,
+          userId: currentUser.id,
+          postId
+        },
+        include: {
+          user: true
+        }
       })
+
       response = { comment: newComment }
     } else {
       return NextResponse.json({ error: 'Loại hành động không hợp lệ.' }, { status: 400 })

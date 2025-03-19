@@ -17,6 +17,8 @@ model User {
   phone String?
   bio String?
   location String?
+  work           String?  
+  education      String?
   hashPassword String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -83,6 +85,7 @@ model Post {
   id           String    @id @default(auto()) @map("_id") @db.ObjectId
   body         String   
   image        String[]
+  video        String[]  
   createdAt    DateTime  @default(now())  
   updatedAt    DateTime  @updatedAt 
 

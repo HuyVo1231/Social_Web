@@ -1,21 +1,14 @@
 import { create } from 'zustand'
+import { PostType } from '@/app/types'
 
-interface Friend {
-  id: string
-  name: string
-  image: string
+interface PostStore {
+  posts: PostType[]
+  addPost: (post: PostType) => void
+  setPosts: (posts: PostType[]) => void
 }
 
-interface FriendsStore {
-  friends: Friend[]
-  addFriend: (friend: Friend) => void
-  setFriends: (friends: Friend[]) => void
-}
-
-const useFriendsStore = create<FriendsStore>((set) => ({
-  friends: [],
-  addFriend: (friend) => set((state) => ({ friends: [...state.friends, friend] })),
-  setFriends: (friends) => set({ friends })
+export const usePostStore = create<PostStore>((set) => ({
+  posts: [],
+  addPost: (post) => set((state) => ({ posts: [post, ...state.posts] })),
+  setPosts: (posts) => set({ posts })
 }))
-
-export default useFriendsStore

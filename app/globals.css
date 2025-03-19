@@ -64,3 +64,6 @@ body,
     --chart-5: 340 75% 55%;
   }
 }
+.cloudinary-widget {
+  z-index: 10000 !important;
+}

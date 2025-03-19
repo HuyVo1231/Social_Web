@@ -21,3 +21,13 @@ export type PostType = Post & {
   likes: Like[]
   comments: Comment[]
 }
+
+export type ProfileType = User & {
+  friendsCount: number
+  isFriend: boolean
+  posts: (Post & {
+    user: User
+    likes: Like[]
+    comments: (Comment & { user: User })[]
+  })[]
+}

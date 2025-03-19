@@ -22,7 +22,7 @@ export default function ModalImage({ src, alt = 'Image', className }: ModalImage
       </DialogTrigger>
       <DialogContent className='max-w-2xl p-4 flex flex-col items-center'>
         <DialogTitle />
-        <div className='relative w-[600px] h-[600px] max-w-full max-h-full overflow-hidden rounded-lg'>
+        <div className='relative w-[500px] h-[600px] rounded-lg'>
           <Image src={src} alt={alt} layout='fill' objectFit='contain' className='rounded-lg' />
         </div>
       </DialogContent>

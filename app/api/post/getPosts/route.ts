@@ -4,13 +4,11 @@ import prisma from '@/app/libs/prismadb'
 export async function GET() {
   try {
     const posts = await prisma.post.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      },
+      orderBy: { createdAt: 'desc' },
       include: {
         user: true,
         likes: true,
-        comments: true
+        comments: { include: { user: true } }
       }
     })
 

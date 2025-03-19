@@ -32,7 +32,7 @@ const ListFriends = () => {
     return (
       <div className='space-y-1'>
         {friends.map((user) => (
-          <FriendBox key={user.id} name={user.name} avatarUrl={user.image} />
+          <FriendBox key={user.id} name={user.name} avatarUrl={user.image} id={user.id} />
         ))}
       </div>
     )

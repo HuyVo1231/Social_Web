@@ -2,26 +2,29 @@ import { Card } from '@/components/ui/card'
 import PostHeader from './PostHeader'
 import PostContent from './PostContent'
 import PostActions from './PostActions'
-import PostComment from './PostComment'
+import { PostType } from '@/app/types'
 
 interface PostProps {
-  avatar: string
-  name: string
-  time: Date
-  text: string
-  images: string[]
-  likes: number
-  comments: number
+  post: PostType
 }
 
-export default function Post({ avatar, name, time, text, images, likes, comments }: PostProps) {
+export default function Post({ post }: PostProps) {
   return (
     <div className='w-full mx-auto rounded-xl'>
       <Card className='bg-gray-100 rounded-2xl p-2'>
-        <PostHeader avatar={avatar} name={name} time={time} />
-        <PostContent text={text} images={images} />
-        <PostActions likes={likes} comments={comments} />
-        <PostComment />
+        <PostHeader
+          avatar={post.user.image!}
+          name={post.user.name || 'Anonymous'}
+          time={post.createdAt}
+        />
+        <PostContent text={post.body} images={post.image} videos={post.video} />
+        <PostActions
+          postId={post.id}
+          initialLikes={post.likes.length}
+          initialComments={post.comments.length}
+          likesData={post.likes}
+          commentsData={post.comments}
+        />
       </Card>
     </div>
   )

@@ -9,26 +9,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Chưa đăng nhập.' }, { status: 401 })
     }
 
-    const { body, images } = await req.json()
+    const { body, images, videos } = await req.json()
 
-    if (!body || typeof body !== 'string') {
-      return NextResponse.json({ error: 'Nội dung bài viết không hợp lệ.' }, { status: 400 })
+    // Kiểm tra dữ liệu hợp lệ
+    if (!body && (!images || images.length === 0) && (!videos || videos.length === 0)) {
+      return NextResponse.json({ error: 'Bài viết trống.' }, { status: 400 })
     }
 
     const newPost = await prisma.post.create({
       data: {
-        body,
+        body: body || '',
         image: images || [],
+        video: videos || [],
         userId: currentUser.id
       },
       include: {
-        user: true
+        user: true,
+        likes: true,
+        comments: {
+          include: {
+            user: true
+          }
+        }
       }
     })
 
     return NextResponse.json({ post: newPost }, { status: 201 })
   } catch (error) {
-    console.error('CREATE POST ERROR:', error)
+    console.error('❌ CREATE POST ERROR:', error)
     return NextResponse.json({ error: 'Lỗi server khi tạo bài viết.' }, { status: 500 })
   }
 }
