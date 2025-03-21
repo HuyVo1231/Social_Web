@@ -1,7 +1,5 @@
 'use client'
 
-import { Avatar } from '@/components/ui/avatar'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 import CP_Avatar from '../Avatar/Avatar'

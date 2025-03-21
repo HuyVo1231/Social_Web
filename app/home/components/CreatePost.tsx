@@ -22,6 +22,7 @@ import { ClipLoader } from 'react-spinners'
 import PostAvatar from './post/PostAvatar'
 import { uploadToCloudinary } from '@/app/hooks/useUpload'
 import MediaPreview from '@/app/components/Media/MediaPreview'
+import CP_Avatar from '@/app/components/Avatar/Avatar'
 
 const CreatePost = () => {
   const { data: session } = useSession()
@@ -98,8 +99,7 @@ const CreatePost = () => {
   return (
     <div className='bg-white rounded-lg p-4 '>
       <div className='flex items-center gap-3'>
-        <PostAvatar src={user?.image || '/images/placeholder.jpg'} />
-
+        <CP_Avatar src={user?.image || '/images/placeholder.jpg'} />
         <Input
           type='text'
           placeholder={`What's on your mind, ${user?.name || 'User'}?`}
@@ -153,46 +153,37 @@ const CreatePost = () => {
             {/* Hiển thị loading spinner */}
             {loading && (
               <div className='flex justify-center mt-4'>
-                <div>Đang tải dữ liệu.</div>
+                <div>Đang upload dữ liệu.</div>
                 <ClipLoader color='#3B82F6' size={30} />
               </div>
             )}
-            <div className='flex gap-2'>
-              {/* Hiển thị ảnh preview */}
-              {imagePreviews.length > 0 && (
-                <div className='flex gap-2 flex-wrap mt-3'>
-                  {imagePreviews.map((preview, index) => (
-                    <MediaPreview
-                      key={index}
-                      type='image'
-                      src={preview}
-                      onRemove={() => {
-                        setImagePreviews((prev) => prev.filter((_, i) => i !== index))
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
 
-              {/* Hiển thị video preview */}
-              {videoPreviews.length > 0 && (
-                <div className='flex gap-2 flex-wrap mt-3'>
-                  {videoPreviews.map((preview, index) => (
-                    <MediaPreview
-                      key={index}
-                      type='video'
-                      src={preview}
-                      onRemove={() => {
-                        setVideoPreviews((prev) => prev.filter((_, i) => i !== index))
-                      }}
-                      size={200}
-                    />
-                  ))}
-                </div>
-              )}
+            <div className='max-h-[200px] overflow-y-auto flex gap-2 flex-wrap mt-3'>
+              {imagePreviews.map((preview, index) => (
+                <MediaPreview
+                  key={index}
+                  type='image'
+                  src={preview}
+                  onRemove={() => {
+                    setImagePreviews((prev) => prev.filter((_, i) => i !== index))
+                  }}
+                  size={120}
+                />
+              ))}
+              {videoPreviews.map((preview, index) => (
+                <MediaPreview
+                  key={index}
+                  type='video'
+                  src={preview}
+                  onRemove={() => {
+                    setVideoPreviews((prev) => prev.filter((_, i) => i !== index))
+                  }}
+                  size={200}
+                />
+              ))}
             </div>
 
-            <Button className='w-full mt-4' onClick={handleSubmit}>
+            <Button className='w-full mt-3' onClick={handleSubmit}>
               Đăng bài viết
             </Button>
           </DialogContent>

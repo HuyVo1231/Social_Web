@@ -1,29 +1,14 @@
 'use client'
 
-import { useEffect, useCallback, useMemo } from 'react'
-import useFriendsStore from '@/app/zustand/friendsStore'
-import { fetcher } from '@/app/libs/fetcher'
+import { useMemo } from 'react'
 import FriendBox from './FriendBox'
+import { User } from '@prisma/client'
 
-const ListFriends = () => {
-  const { friends, setFriends } = useFriendsStore()
+interface ListFriendsProps {
+  friends: User[]
+}
 
-  const fetchFriends = useCallback(async () => {
-    try {
-      const res = await fetcher('/api/friends/getFriends', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      setFriends(res)
-    } catch (error) {
-      console.error('Lỗi khi lấy danh sách bạn bè:', error)
-    }
-  }, [setFriends])
-
-  useEffect(() => {
-    fetchFriends()
-  }, [fetchFriends])
-
+const ListFriends: React.FC<ListFriendsProps> = ({ friends }) => {
   const friendList = useMemo(() => {
     if (!friends || friends.length === 0) {
       return <p className='text-gray-500 text-sm'>Không có bạn bè nào.</p>

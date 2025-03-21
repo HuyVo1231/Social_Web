@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -11,7 +12,11 @@ import {
 import { UserPlus, UserCheck, MessageCircle } from 'lucide-react'
 
 export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
+  console.log('isFriend', isFriend)
   const [friend, setFriend] = useState(isFriend)
+  const pathname = usePathname()
+
+  const isCurrentUserProfile = pathname === '/profile'
 
   const handleAddFriend = () => {
     setFriend(true)
@@ -23,6 +28,10 @@ export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
 
   const handleMessage = () => {
     console.log('Nhắn tin')
+  }
+
+  if (isCurrentUserProfile) {
+    return null
   }
 
   return (

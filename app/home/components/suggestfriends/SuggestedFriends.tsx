@@ -1,21 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { User } from '@prisma/client'
 import SuggestedFriendBox from './SuggestedFriendBox'
 import { Separator } from '@/components/ui/separator'
 import { fetcher } from '@/app/libs/fetcher'
 
-export default function SuggestedFriends() {
-  const [friends, setFriends] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+interface SuggestedFriendsProps {
+  friends: User[]
+}
 
-  useEffect(() => {
-    fetch('/api/friends/suggested-friends')
-      .then((res) => res.json())
-      .then((data: User[]) => setFriends(data))
-      .finally(() => setIsLoading(false))
-  }, [])
+export default function SuggestedFriends({ friends: initialFriends }: SuggestedFriendsProps) {
+  const [friends, setFriends] = useState<User[]>(initialFriends)
 
   const handleAddFriend = async (userId: string) => {
     try {
@@ -39,9 +35,7 @@ export default function SuggestedFriends() {
       <h3 className='font-medium text-sm text-gray-900 -tracking-tighter mb-2'>Maybe you know</h3>
       <Separator />
       <div className='flex flex-col gap-2'>
-        {isLoading ? (
-          <p className='text-gray-500 text-sm mt-2'>Đang tải danh sách...</p>
-        ) : friends.length > 0 ? (
+        {friends.length > 0 ? (
           friends.map((user) => (
             <SuggestedFriendBox
               key={user.id}

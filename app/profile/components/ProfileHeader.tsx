@@ -14,6 +14,7 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader({ profile }: ProfileHeaderProps) {
   const name = useMemo(() => profile.name || 'Người dùng ẩn danh', [profile.name])
+
   const location = useMemo(
     () => profile.location || 'Không có thông tin địa điểm',
     [profile.location]
@@ -29,35 +30,32 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
   const coverUrl = useMemo(() => profile.image || '/images/placeholder.jpg', [profile.image])
 
   return (
-    <Card className='w-full max-w-3xl mx-auto rounded-lg overflow-hidden'>
+    <Card className='w-full max-w-3xl mx-auto rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300'>
       {/* Ảnh bìa */}
       <ProfileCover coverUrl={coverUrl} />
 
       {/* Thông tin hồ sơ */}
-      <div className='p-6 flex flex-col items-center bg-white'>
+      <div className='p-6 flex flex-col items-center bg-gradient-to-b from-white to-gray-50'>
         {/* Avatar */}
         <ProfileAvatar avatarUrl={avatarUrl} />
         {/* Tên và thông tin cơ bản */}
         <h2 className='text-2xl font-bold mt-4 text-gray-800'>{name}</h2>
-        <div className='flex items-center text-gray-600 mt-1'>
-          <p className='text-sm text-gray-500 mt-2'>Cho đi là nhận lại</p>
-        </div>
+        <p className='text-sm text-gray-500 mt-2'>Cho đi là nhận lại</p>
         {/* Thông tin chi tiết */}
-        <div className='mt-4 space-y-2 text-gray-700'>
-          <div className='flex items-center'>
-            <MapPin className='w-4 h-4 mr-1' /> <span>{location}</span>
+        <div className='mt-4 space-y-2 text-gray-700 w-full'>
+          <div className='flex items-center p-2 hover:bg-gray-100 rounded transition-colors duration-200'>
+            <MapPin className='w-4 h-4 mr-2 text-blue-500' /> <span>{location}</span>
           </div>
-          <div className='flex items-center'>
-            <Briefcase className='w-4 h-4 mr-2' /> <span>{work}</span>
+          <div className='flex items-center p-2 hover:bg-gray-100 rounded transition-colors duration-200'>
+            <Briefcase className='w-4 h-4 mr-2 text-green-500' /> <span>{work}</span>
           </div>
-          <div className='flex items-center'>
-            <GraduationCap className='w-4 h-4 mr-2' /> <span>{education}</span>
+          <div className='flex items-center p-2 hover:bg-gray-100 rounded transition-colors duration-200'>
+            <GraduationCap className='w-4 h-4 mr-2 text-purple-500' /> <span>{education}</span>
           </div>
-          <div className='flex items-center'>
-            <Users className='w-4 h-4 mr-2' /> <span>{friendsCount} bạn bè</span>
+          <div className='flex items-center p-2 hover:bg-gray-100 rounded transition-colors duration-200'>
+            <Users className='w-4 h-4 mr-2 text-red-500' /> <span>{friendsCount} bạn bè</span>
           </div>
         </div>
-        {/* Nút thao tác */}
         <ProfileActions isFriend={isFriend} />
       </div>
     </Card>

@@ -10,7 +10,6 @@ export default function ProfilePosts({ initPosts }: { initPosts: PostType[] }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  console.log('Posts:', posts)
   return (
     <div className='flex justify-center mt-2'>
       {loading ? (

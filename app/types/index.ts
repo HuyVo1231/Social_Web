@@ -19,12 +19,17 @@ export type NotificationType = Notification & {
 export type PostType = Post & {
   user: User
   likes: Like[]
-  comments: Comment[]
+  comments: (Comment & { user: User })[]
 }
 
-export type ProfileType = User & {
+export type ProfileType = {
+  name: string
+  image: string | null
+  location: string | null
+  work: string | null
+  education: string | null
   friendsCount: number
-  isFriend: boolean
+  isFriend?: boolean
   posts: (Post & {
     user: User
     likes: Like[]
