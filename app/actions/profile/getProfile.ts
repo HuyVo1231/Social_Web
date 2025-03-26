@@ -75,6 +75,7 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
       email: user.email,
       emailVerified: user.emailVerified?.toISOString() || null,
       image: user.image,
+      coverCrop: user.coverCrop,
       imageThumbnail: user.imageThumbnail,
       phone: user.phone,
       bio: user.bio,
@@ -84,6 +85,7 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
       friendsCount,
+      imageCrop: user.imageCrop,
       friends: friends.map((friend) => ({
         id: friend.id,
         name: friend.name,

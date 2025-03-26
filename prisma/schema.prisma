@@ -22,7 +22,8 @@ model User {
   hashPassword String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  coverCrop Json?
+  imageCrop Json?
   conversationsIds String[] @db.ObjectId
   conversations Conversation[] @relation(fields: [conversationsIds], references: [id])
 

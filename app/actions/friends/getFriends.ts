@@ -2,16 +2,21 @@ import prisma from '@/app/libs/prismadb'
 import getCurrentUser from '@/app/actions/users/getCurrentUser'
 import { User } from '@prisma/client'
 
-export async function getFriends(): Promise<User[]> {
+export async function getFriends(userId?: string): Promise<User[]> {
   try {
-    const currentUser = await getCurrentUser()
-    if (!currentUser) return []
+    let targetUserId = userId
+
+    if (!targetUserId) {
+      const currentUser = await getCurrentUser()
+      if (!currentUser) return []
+      targetUserId = currentUser.id
+    }
 
     const friendships = await prisma.friendship.findMany({
       where: {
         OR: [
-          { initiatorId: currentUser.id, status: 'ACCEPTED' },
-          { receiverId: currentUser.id, status: 'ACCEPTED' }
+          { initiatorId: targetUserId, status: 'ACCEPTED' },
+          { receiverId: targetUserId, status: 'ACCEPTED' }
         ]
       },
       select: {
@@ -21,7 +26,7 @@ export async function getFriends(): Promise<User[]> {
     })
 
     const friends = friendships.map((f) =>
-      f.initiator.id === currentUser.id ? f.receiver : f.initiator
+      f.initiator.id === targetUserId ? f.receiver : f.initiator
     )
 
     return friends

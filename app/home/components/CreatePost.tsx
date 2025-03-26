@@ -19,7 +19,6 @@ import { fetcher } from '@/app/libs/fetcher'
 import toast from 'react-hot-toast'
 import { usePostStore } from '@/app/zustand/postStore'
 import { ClipLoader } from 'react-spinners'
-import PostAvatar from './post/PostAvatar'
 import { uploadToCloudinary } from '@/app/hooks/useUpload'
 import MediaPreview from '@/app/components/Media/MediaPreview'
 import CP_Avatar from '@/app/components/Avatar/Avatar'
@@ -28,7 +27,6 @@ const CreatePost = () => {
   const { data: session } = useSession()
   const user = session?.user
   const { addPost } = usePostStore()
-
   const [open, setOpen] = useState(false)
   const [postText, setPostText] = useState('')
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -118,7 +116,7 @@ const CreatePost = () => {
 
             <div className='flex items-center justify-between'>
               <div className='flex items-center gap-3'>
-                <PostAvatar src={user?.image || '/images/placeholder.jpg'} size={48} outline />
+                <CP_Avatar src={user?.image || '/images/placeholder.jpg'} size={48} />
                 <div>
                   <p className='text-lg font-semibold text-gray-900'>{user?.name || 'User'}</p>
                   <Select onValueChange={setPrivacy} defaultValue={privacy}>

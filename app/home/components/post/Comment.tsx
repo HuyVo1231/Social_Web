@@ -1,4 +1,4 @@
-import PostAvatar from './PostAvatar'
+import CP_Avatar from '@/app/components/Avatar/Avatar'
 import { format } from 'date-fns'
 
 interface CommentProps {
@@ -11,7 +11,7 @@ interface CommentProps {
 const Comment = ({ userImage, username, content, createdAt }: CommentProps) => {
   return (
     <div className='flex items-center gap-2'>
-      <PostAvatar src={userImage || '/images/placeholder.jpg'} />
+      <CP_Avatar src={userImage || '/images/placeholder.jpg'} />
       <div className='bg-gray-100 dark:bg-gray-800 p-2 rounded-lg'>
         <div className='flex justify-center items-center gap-2'>
           <p className='font-semibold'>{username}</p>

@@ -1,6 +1,6 @@
 import { ProfileType } from '@/app/types'
 import ProfileHeader from './ProfileHeader'
-import ProfilePosts from './ProfilePosts'
+import ProfileTabs from './ProfileTabs'
 
 export default function ProfilePage({ profile }: { profile: ProfileType }) {
   if (!profile) return <p className='text-center text-gray-500'>Hồ sơ không tồn tại</p>
@@ -8,7 +8,7 @@ export default function ProfilePage({ profile }: { profile: ProfileType }) {
   return (
     <div>
       <ProfileHeader profile={profile} />
-      <ProfilePosts initPosts={profile.posts} />
+      <ProfileTabs profile={profile} />
     </div>
   )
 }

@@ -11,7 +11,7 @@ export default function ProfilePosts({ initPosts }: { initPosts: PostType[] }) {
   const [error, setError] = useState<string | null>(null)
 
   return (
-    <div className='flex justify-center mt-2'>
+    <div className='flex justify-center'>
       {loading ? (
         <div className='flex justify-center items-center h-20'>
           <ClipLoader color='#3B82F6' size={30} />

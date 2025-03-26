@@ -23,13 +23,23 @@ export type PostType = Post & {
 }
 
 export type ProfileType = {
+  coverCrop?: { x: number; y: number }
+  bio: string
   name: string
   image: string | null
+  imageThumbnail: string | null
   location: string | null
   work: string | null
   education: string | null
   friendsCount: number
   isFriend?: boolean
+  photos: string[]
+  imageCrop?: { x: number; y: number }
+  friends: {
+    id: string
+    name: string
+    image: string | null
+  }[]
   posts: (Post & {
     user: User
     likes: Like[]

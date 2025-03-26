@@ -3,13 +3,13 @@
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import PostAvatar from './PostAvatar'
 import useUserStore from '@/app/zustand/userStore'
 import Comment from './Comment'
 import { Comment as CommentType, User } from '@prisma/client'
 import { useState } from 'react'
 import { fetcher } from '@/app/libs/fetcher'
 import toast from 'react-hot-toast'
+import CP_Avatar from '@/app/components/Avatar/Avatar'
 
 type CommentFormValues = {
   body: string
@@ -82,7 +82,7 @@ export default function PostComment({
 
       {/* Ô nhập bình luận */}
       <form onSubmit={handleSubmit(onSubmit)} className='flex items-center gap-2 border-t pt-2'>
-        <PostAvatar src={user?.image || '/images/placeholder.jpg'} />
+        <CP_Avatar src={user?.image || '/images/placeholder.jpg'} />
         <Input
           placeholder='Viết bình luận...'
           className='flex-1'
