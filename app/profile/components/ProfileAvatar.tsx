@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Pencil } from 'lucide-react'
 import Image from 'next/image'
+import { Input } from '@/components/ui/input'
+import useProfile from '@/app/hooks/useProfile'
 
 interface ProfileAvatarProps {
   avatarUrl: string
@@ -14,6 +16,7 @@ interface ProfileAvatarProps {
 }
 
 export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarProps) {
+  const { isOwnProfile } = useProfile()
   const [image, setImage] = useState<string>(avatarUrl)
   const [crop, setCrop] = useState({ x: avatarCrop?.x || 0, y: avatarCrop?.y || 0 })
   const [zoom, setZoom] = useState(avatarCrop?.zoom || 1)
@@ -33,7 +36,7 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
     }
   }
 
-  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+  const onCropComplete = useCallback((_: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels)
   }, [])
 
@@ -42,22 +45,15 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
     setLoading(true)
 
     try {
-      const file = selectedFile
-      const url = await uploadToCloudinary(file)
-
+      const url = await uploadToCloudinary(selectedFile)
       await fetch('/api/profile/change-profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           avatar: url,
-          avatarCrop: {
-            x: crop.x,
-            y: crop.y,
-            zoom: zoom
-          }
+          avatarCrop: { x: crop.x, y: crop.y, zoom }
         })
       })
-
       setImage(url)
       setPreview(null)
       setSelectedFile(null)
@@ -83,10 +79,9 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}
-                restrictPosition={true} // Ngăn kéo ảnh ra ngoài
+                restrictPosition
               />
             </div>
-
             <div className='w-full mt-4'>
               <label className='text-sm font-medium'>Zoom</label>
               <Slider
@@ -97,7 +92,6 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
                 onValueChange={(val) => setZoom(val[0])}
               />
             </div>
-
             <div className='mt-4 flex gap-4'>
               <Button onClick={() => setPreview(null)} variant='secondary'>
                 Hủy
@@ -109,7 +103,6 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
           </div>
         </div>
       )}
-
       <div className='w-40 h-40 border-4 border-white rounded-full overflow-hidden relative'>
         <Image
           src={image}
@@ -117,23 +110,19 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
           height={160}
           alt='Avatar'
           className='w-full h-full object-cover'
-          style={{
-            transform: `translate(${crop.x}px, ${crop.y}px) scale(${zoom})`
-          }}
+          style={{ transform: `translate(${crop.x}px, ${crop.y}px) scale(${zoom})` }}
         />
       </div>
-
-      {/* Nút chỉnh sửa */}
-      <Button
-        variant='secondary'
-        size='icon'
-        className='absolute bottom-2 right-2 w-10 h-10 rounded-full bg-white shadow-md hover:bg-gray-100 z-10'
-        onClick={() => fileInputRef.current?.click()}>
-        <Pencil className='w-5 h-5 text-gray-600' />
-      </Button>
-
-      {/* Input file ẩn */}
-      <input
+      {isOwnProfile && (
+        <Button
+          variant='secondary'
+          size='icon'
+          className='absolute bottom-2 right-2 w-10 h-10 rounded-full bg-white shadow-md hover:bg-gray-100 z-10'
+          onClick={() => fileInputRef.current?.click()}>
+          <Pencil className='w-5 h-5 text-gray-600' />
+        </Button>
+      )}
+      <Input
         type='file'
         accept='image/*'
         ref={fileInputRef}

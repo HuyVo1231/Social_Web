@@ -17,8 +17,12 @@ model User {
   phone String?
   bio String?
   location String?
-  work           String?  
-  education      String?
+  work String?  
+  education String?
+  relationship String?
+  hobbies String?
+  website String?
+  skills String?
   hashPassword String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

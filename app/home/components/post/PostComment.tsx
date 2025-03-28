@@ -28,7 +28,7 @@ export default function PostComment({
 }: PostCommentProps) {
   const user = useUserStore((state) => state.user)
 
-  const [allComments, setAllComments] = useState(commentsData) // Lưu toàn bộ bình luận
+  const [allComments, setAllComments] = useState(commentsData)
   const [showAllComment, setShowAllComment] = useState(false)
 
   // Danh sách hiển thị
@@ -71,12 +71,12 @@ export default function PostComment({
         />
       ))}
 
-      {/* Nút "Xem thêm" nếu có hơn 2 bình luận */}
-      {allComments.length > 2 && !showAllComment && (
+      {/* Nút "Xem thêm" hoặc "Ẩn bớt" */}
+      {allComments.length > 2 && (
         <button
           className='text-sm text-blue-500 hover:underline self-start'
-          onClick={() => setShowAllComment(true)}>
-          Xem thêm bình luận
+          onClick={() => setShowAllComment((prev) => !prev)}>
+          {showAllComment ? 'Ẩn bớt' : 'Xem thêm bình luận'}
         </button>
       )}
 

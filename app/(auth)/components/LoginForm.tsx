@@ -36,7 +36,6 @@ const LoginForm = () => {
         email: session.user.email,
         image: session.user.image
       })
-      console.log('session.user.name', session.user.name)
       router.push('/home')
     }
   }, [status, session?.user, setUser, router])

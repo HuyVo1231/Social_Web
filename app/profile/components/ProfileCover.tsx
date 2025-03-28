@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import { usePathname } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
@@ -10,6 +9,7 @@ import { fetcher } from '@/app/libs/fetcher'
 import ClipLoader from 'react-spinners/ClipLoader'
 import { uploadToCloudinary } from '@/app/hooks/useUpload'
 import Image from 'next/image'
+import useProfile from '@/app/hooks/useProfile'
 
 export default function ProfileCover({
   coverUrl,
@@ -18,11 +18,9 @@ export default function ProfileCover({
   coverUrl: string
   coverCrop?: { x: number; y: number }
 }) {
-  const pathname = usePathname()
-  const isOwnProfile = pathname === '/profile'
+  const { isOwnProfile } = useProfile()
   const containerHeight = 400
 
-  // Lưu trạng thái ảnh bìa hiện tại
   const [currentCoverUrl, setCurrentCoverUrl] = useState(coverUrl)
   const [loading, setLoading] = useState(false)
   const [newCover, setNewCover] = useState<string | null>(null)
@@ -41,8 +39,8 @@ export default function ProfileCover({
 
     if (url) {
       setNewCover(url)
-      setCurrentY(0) // Reset vị trí khi thay ảnh mới
-      setCanDrag(true) // Cho phép kéo
+      setCurrentY(0)
+      setCanDrag(true)
     }
   }, [])
 
@@ -61,17 +59,16 @@ export default function ProfileCover({
       await fetcher('/api/profile/change-profile', {
         method: 'PUT',
         body: JSON.stringify({
-          imageThumbnail: newCover,
+          cover: newCover,
           coverCrop: { x: 0, y: currentY }
         })
       })
 
       toast.success('Cập nhật ảnh bìa thành công!')
 
-      // Cập nhật ảnh bìa mới
       setCurrentCoverUrl(newCover)
-      setNewCover(null) // Xóa trạng thái ảnh mới
-      setCanDrag(false) // Ngừng cho phép kéo
+      setNewCover(null)
+      setCanDrag(false)
     } catch (error) {
       console.error(error)
       toast.error('Lỗi khi cập nhật ảnh bìa!')
@@ -81,7 +78,7 @@ export default function ProfileCover({
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!canDrag) return // Không cho kéo nếu chưa thay ảnh mới
+    if (!canDrag) return
     e.preventDefault()
     setDragging(true)
     setStartY(e.clientY)

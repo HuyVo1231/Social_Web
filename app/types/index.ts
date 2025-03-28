@@ -31,6 +31,10 @@ export type ProfileType = {
   location: string | null
   work: string | null
   education: string | null
+  relationship: string | null
+  website: string | null
+  skills: string | null
+  hobbies: string[] | []
   friendsCount: number
   isFriend?: boolean
   photos: string[]

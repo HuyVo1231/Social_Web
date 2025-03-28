@@ -44,7 +44,6 @@ const NotificationPopover = () => {
           : notification
       )
     )
-    console.log('notifications updated', notificationId)
   }
 
   const handleAcceptFriendRequest = async (
@@ -59,7 +58,6 @@ const NotificationPopover = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: senderId, action: 'accept_request' })
       })
-      console.log('res', res)
       if (res) {
         updateNotificationStatus(notificationId, 'ACCEPTED')
         addFriend({

@@ -5,8 +5,20 @@ import getCurrentUser from '@/app/actions/users/getCurrentUser'
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json()
-    const { imageThumbnail, coverCrop, avatar, avatarCrop } = body
-
+    const {
+      imageThumbnail,
+      coverCrop,
+      avatar,
+      avatarCrop,
+      location,
+      work,
+      education,
+      relationship,
+      hobbies,
+      bio,
+      website,
+      skills
+    } = body
     const currentUser = await getCurrentUser()
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -15,16 +27,24 @@ export async function PUT(req: NextRequest) {
     await prisma.user.update({
       where: { id: currentUser.id },
       data: {
-        imageThumbnail, // Cập nhật ảnh bìa
-        coverCrop, // Vị trí crop ảnh bìa
-        image: avatar, // Cập nhật avatar
-        imageCrop: avatarCrop // Vị trí crop avatar
+        imageThumbnail,
+        coverCrop,
+        image: avatar,
+        imageCrop: avatarCrop,
+        location,
+        work,
+        education,
+        relationship,
+        hobbies,
+        bio,
+        website,
+        skills
       }
     })
 
-    return NextResponse.json({ message: 'Cập nhật ảnh thành công!' })
+    return NextResponse.json({ message: 'Cập nhật thông tin thành công!' })
   } catch (error) {
-    console.error('Lỗi khi cập nhật ảnh:', error)
+    console.error('Lỗi khi cập nhật thông tin:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
