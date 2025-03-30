@@ -1,9 +1,8 @@
 'use client'
 
 import { NotificationType } from '@/app/types'
-import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import Image from 'next/image'
+import CP_Avatar from '../Avatar/Avatar'
 
 interface UserRequestBoxProps {
   data: NotificationType
@@ -17,15 +16,7 @@ const UserRequestBox = ({ onAccept, onReject, data }: UserRequestBoxProps) => {
 
   return (
     <div className='flex items-center space-x-2 py-1 border-gray-200 bg-white rounded-lg'>
-      <Avatar className='w-[50px] h-[50px]'>
-        <Image
-          src={sender?.image || '/images/placeholder.jpg'}
-          alt={sender?.name || 'User'}
-          width={50}
-          height={50}
-          className='rounded-full'
-        />
-      </Avatar>
+      <CP_Avatar src={sender?.image || '/images/placeholder.jpg'} />
       <div className='w-full'>
         {status === 'PENDING' && (
           <>

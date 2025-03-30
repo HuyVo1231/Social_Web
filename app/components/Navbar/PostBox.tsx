@@ -1,7 +1,7 @@
 'use client'
 
-import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import CP_Avatar from '../Avatar/Avatar'
 
 interface PostBoxProps {
   postAuthor: string
@@ -13,7 +13,7 @@ interface PostBoxProps {
 const PostBox = ({ postAuthor, postAuthorAvatar, postContent, postUrl }: PostBoxProps) => {
   return (
     <div className='flex items-center space-x-4 p-4 border-b border-gray-200'>
-      <Avatar src={postAuthorAvatar} alt={postAuthor} className='w-12 h-12' />
+      <CP_Avatar src={postAuthorAvatar} />
       <div className='flex-1'>
         <p className='font-semibold'>{postAuthor} đã nhắc đến bạn trong bài post</p>
         <p className='text-sm text-gray-600 mt-1'>{postContent}</p>

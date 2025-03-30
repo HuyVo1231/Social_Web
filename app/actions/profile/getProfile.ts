@@ -8,20 +8,17 @@ interface ProfileParams {
 
 export async function getProfile({ email, profileId }: ProfileParams = {}) {
   try {
-    // Lấy người dùng hiện tại từ session
     const currentUser = await getCurrentUser()
     if (!currentUser) {
       throw new Error('Unauthorized')
     }
 
-    // Xác định điều kiện truy vấn dựa trên email hoặc profileId
     const whereCondition = profileId
       ? { id: profileId }
       : email
       ? { email }
       : { id: currentUser.id }
 
-    // Truy vấn thông tin người dùng từ cơ sở dữ liệu
     const user = await prisma.user.findUnique({
       where: whereCondition,
       include: {
@@ -52,23 +49,53 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
       throw new Error('User not found')
     }
 
-    // Kiểm tra xem người dùng hiện tại có phải là chủ sở hữu profile không
     const isOwner = user.id === currentUser.id
 
-    // Tính tổng số bạn bè
-    const friendsCount =
-      (user.friendshipsInitiated?.length || 0) + (user.friendshipsReceived?.length || 0)
-
-    // Tạo danh sách bạn bè
-    const friends = [
+    const userFriends = [
       ...user.friendshipsInitiated.map((f) => f.receiver),
       ...user.friendshipsReceived.map((f) => f.initiator)
     ]
 
-    // Kiểm tra xem người dùng hiện tại có phải là bạn bè không
-    const isFriend = isOwner ? undefined : friends.some((friend) => friend.id === currentUser.id)
+    const currentUserFriends = await prisma.user.findUnique({
+      where: { id: currentUser.id },
+      include: {
+        friendshipsInitiated: {
+          where: { status: 'ACCEPTED' },
+          include: { receiver: true }
+        },
+        friendshipsReceived: {
+          where: { status: 'ACCEPTED' },
+          include: { initiator: true }
+        }
+      }
+    })
 
-    // Trả về dữ liệu profile
+    if (!currentUserFriends) {
+      throw new Error('Current user not found')
+    }
+
+    const currentUserFriendsList = [
+      ...currentUserFriends.friendshipsInitiated.map((f) => f.receiver),
+      ...currentUserFriends.friendshipsReceived.map((f) => f.initiator)
+    ]
+
+    // Tính số bạn chung
+    const mutualFriends = userFriends.filter((friend) =>
+      currentUserFriendsList.some((f) => f.id === friend.id)
+    )
+
+    const isFriend = isOwner
+      ? undefined
+      : userFriends.some((friend) => friend.id === currentUser.id)
+
+    // Lấy danh sách ảnh từ bài viết (lọc những bài có ảnh hợp lệ)
+    const photos = user.posts
+      .filter((post) => post.image) // Chỉ lấy post có ảnh
+      .map((post) => ({
+        postId: post.id,
+        image: post.image!
+      }))
+
     return {
       id: user.id,
       name: user.name,
@@ -88,13 +115,15 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
       education: user.education,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
-      friendsCount,
+      friendsCount: userFriends.length,
       imageCrop: user.imageCrop,
-      friends: friends.map((friend) => ({
+      friends: userFriends.map((friend) => ({
         id: friend.id,
         name: friend.name,
-        image: friend.image
+        image: friend.image,
+        mutualFriends: mutualFriends.filter((mf) => mf.id === friend.id).length // Số bạn chung với từng bạn bè
       })),
+      mutualFriendsCount: mutualFriends.length, // Tổng số bạn chung
       posts: user.posts.map((post) => ({
         id: post.id,
         body: post.body,
@@ -122,6 +151,7 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
           }
         }))
       })),
+      photos, // ✅ Thêm danh sách ảnh từ bài viết
       isFriend
     }
   } catch (error) {

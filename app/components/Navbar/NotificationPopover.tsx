@@ -10,16 +10,22 @@ import PostBox from './PostBox'
 import { NotificationType } from '@/app/types'
 import { Separator } from '@/components/ui/separator'
 import useFriendsStore from '@/app/zustand/friendsStore'
+import { useSession } from 'next-auth/react'
+import { pusherClient } from '@/app/libs/pusher'
 
 const NotificationPopover = () => {
+  const session = useSession()
+  const currentUserId = session?.data?.user?.id
   const [notifications, setNotifications] = useState<NotificationType[]>([])
   const { addFriend } = useFriendsStore()
 
   useEffect(() => {
+    if (!currentUserId) return
+
     const fetchNotifications = async () => {
       try {
         const res = await fetcher('/api/notifications')
-        if (res && res.notifications) {
+        if (res?.notifications) {
           setNotifications(res.notifications)
         }
       } catch (error) {
@@ -28,27 +34,29 @@ const NotificationPopover = () => {
     }
 
     fetchNotifications()
-  }, [])
+  }, [currentUserId])
 
   const updateNotificationStatus = (notificationId: string, newStatus: 'ACCEPTED' | 'REJECTED') => {
     setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === notificationId
-          ? {
-              ...notification,
-              friendship: {
-                ...notification.friendship,
-                status: newStatus
-              }
+      prev.map((notification) => {
+        if (notification.id === notificationId && notification.friendship) {
+          return {
+            ...notification,
+            friendship: {
+              ...notification.friendship,
+              status: newStatus
             }
-          : notification
-      )
+          }
+        }
+        return notification
+      })
     )
   }
 
-  const handleAcceptFriendRequest = async (
+  const handleFriendRequest = async (
     senderId: string | undefined,
-    notificationId: string
+    notificationId: string,
+    action: 'accept_request' | 'reject_request'
   ) => {
     if (!senderId) return
 
@@ -56,41 +64,66 @@ const NotificationPopover = () => {
       const res = await fetcher(`/api/friends`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: senderId, action: 'accept_request' })
+        body: JSON.stringify({ userId: senderId, action })
       })
-      if (res) {
+
+      if (action === 'reject_request') {
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+        return
+      }
+
+      if (res && action === 'accept_request') {
         updateNotificationStatus(notificationId, 'ACCEPTED')
+
+        if (res.updatedFriendship) {
+          addFriend({
+            id: senderId,
+            name: res.updatedFriendship.initiator.name,
+            image: res.updatedFriendship.initiator.image
+          })
+        }
+      }
+    } catch (error) {
+      console.error(`Lỗi khi xử lý lời mời`, error)
+    }
+  }
+
+  useEffect(() => {
+    if (!currentUserId) return
+
+    pusherClient.subscribe(`user-${currentUserId}`)
+
+    const handleFriendRequestUpdate = (data: any) => {
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.friendship?.id === data.friendship.id
+            ? { ...notification, friendship: data.friendship }
+            : notification
+        )
+      )
+
+      if (data.friendship.status === 'ACCEPTED') {
         addFriend({
-          id: senderId,
-          name: res.updatedFriendship.initiator.name,
-          image: res.updatedFriendship.initiator.image
+          id: data.friendship.initiatorId,
+          name: data.friendship.initiator?.name || 'Unknown',
+          image: data.friendship.initiator?.image || '/images/placeholder.jpg'
         })
       }
-    } catch (error) {
-      console.error('Lỗi khi chấp nhận lời mời kết bạn', error)
     }
-  }
 
-  const handleRejectFriendRequest = async (
-    senderId: string | undefined,
-    notificationId: string
-  ) => {
-    if (!senderId) return
-
-    try {
-      const res = await fetcher(`/api/friends`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: senderId, action: 'reject_request' })
-      })
-
-      if (res) {
-        updateNotificationStatus(notificationId, 'REJECTED')
-      }
-    } catch (error) {
-      console.error('Lỗi khi từ chối lời mời kết bạn', error)
+    const handleNewNotification = (notification: NotificationType) => {
+      setNotifications((prev) => [notification, ...prev])
     }
-  }
+
+    pusherClient.bind('friend_request_update', handleFriendRequestUpdate)
+    pusherClient.bind('new_notification', handleNewNotification)
+
+    return () => {
+      pusherClient.unsubscribe(`user-${currentUserId}`)
+      pusherClient.unbind('friend_request_update', handleFriendRequestUpdate)
+      pusherClient.unbind('new_notification', handleNewNotification)
+    }
+  }, [currentUserId])
 
   return (
     <div className='flex items-center'>
@@ -105,7 +138,7 @@ const NotificationPopover = () => {
         </PopoverTrigger>
 
         <PopoverContent className='w-auto'>
-          <div className='grid '>
+          <div className='grid'>
             {notifications.length > 0 ? (
               notifications.map((notification) => (
                 <div key={notification.id}>
@@ -113,10 +146,18 @@ const NotificationPopover = () => {
                     <UserRequestBox
                       data={notification}
                       onAccept={() =>
-                        handleAcceptFriendRequest(notification.sender?.id, notification.id)
+                        handleFriendRequest(
+                          notification.sender?.id,
+                          notification.id,
+                          'accept_request'
+                        )
                       }
                       onReject={() =>
-                        handleRejectFriendRequest(notification.sender?.id, notification.id)
+                        handleFriendRequest(
+                          notification.sender?.id,
+                          notification.id,
+                          'reject_request'
+                        )
                       }
                     />
                   ) : (

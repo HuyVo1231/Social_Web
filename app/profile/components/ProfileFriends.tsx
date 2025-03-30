@@ -1,6 +1,6 @@
 'use client'
 
-import FriendBox from '@/app/components/RightSidebar/FriendBox'
+import SearchFriendBox from '@/app/components/Friends/SearchFriendBox'
 import { ProfileType } from '@/app/types'
 
 interface ProfileFriendsProps {
@@ -19,7 +19,7 @@ export default function ProfileFriends({ profile }: ProfileFriendsProps) {
       <h3 className='text-lg font-bold text-gray-800 mb-2'>Bạn bè ({friends.length})</h3>
       <ul className='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4'>
         {friends.map((user) => (
-          <FriendBox key={user.id} name={user.name} avatarUrl={user.image} id={user.id} />
+          <SearchFriendBox key={user.id} friend={user} />
         ))}
       </ul>
     </div>

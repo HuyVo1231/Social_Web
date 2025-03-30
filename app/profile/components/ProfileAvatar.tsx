@@ -9,6 +9,7 @@ import { Pencil } from 'lucide-react'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import useProfile from '@/app/hooks/useProfile'
+import { fetcher } from '@/app/libs/fetcher'
 
 interface ProfileAvatarProps {
   avatarUrl: string
@@ -46,9 +47,8 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
 
     try {
       const url = await uploadToCloudinary(selectedFile)
-      await fetch('/api/profile/change-profile', {
+      await fetcher('/api/profile/change-profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           avatar: url,
           avatarCrop: { x: crop.x, y: crop.y, zoom }

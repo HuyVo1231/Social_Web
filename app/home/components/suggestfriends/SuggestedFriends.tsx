@@ -12,8 +12,13 @@ interface SuggestedFriendsProps {
 
 export default function SuggestedFriends({ friends: initialFriends }: SuggestedFriendsProps) {
   const [friends, setFriends] = useState<User[]>(initialFriends)
+  const [loading, setLoading] = useState<{ [key: string]: boolean }>({})
 
   const handleAddFriend = async (userId: string) => {
+    if (loading[userId]) return // Nếu đang loading, không cho click tiếp
+
+    setLoading((prev) => ({ ...prev, [userId]: true }))
+
     try {
       const res = await fetcher(`/api/friends`, {
         method: 'POST',
@@ -27,6 +32,8 @@ export default function SuggestedFriends({ friends: initialFriends }: SuggestedF
       }
     } catch (error) {
       console.error('Error adding friend:', error)
+    } finally {
+      setLoading((prev) => ({ ...prev, [userId]: false }))
     }
   }
 
@@ -43,6 +50,7 @@ export default function SuggestedFriends({ friends: initialFriends }: SuggestedF
               name={user.name}
               avatarUrl={user.image || '/images/placeholder.jpg'}
               onAddFriend={handleAddFriend}
+              loading={loading[user.id] || false}
             />
           ))
         ) : (

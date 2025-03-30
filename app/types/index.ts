@@ -43,6 +43,7 @@ export type ProfileType = {
     id: string
     name: string
     image: string | null
+    mutualFriends: number
   }[]
   posts: (Post & {
     user: User

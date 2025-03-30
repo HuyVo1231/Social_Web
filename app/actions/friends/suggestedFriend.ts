@@ -5,7 +5,6 @@ import { User } from '@prisma/client'
 export async function getSuggestedFriends(): Promise<User[]> {
   try {
     const currentUser = await getCurrentUser()
-
     if (!currentUser) {
       return []
     }
@@ -26,7 +25,7 @@ export async function getSuggestedFriends(): Promise<User[]> {
     const friendIds = new Set(friendships.flatMap((f) => [f.initiatorId, f.receiverId]))
     friendIds.delete(userId)
 
-    // Lấy danh sách người đã gửi hoặc nhận lời mời kết bạn từ user
+    // Lấy danh sách user đã gửi hoặc nhận lời mời kết bạn
     const sentRequests = await prisma.friendship.findMany({
       where: {
         OR: [
@@ -43,7 +42,7 @@ export async function getSuggestedFriends(): Promise<User[]> {
     let suggestedFriends: User[] = []
 
     if (friendIds.size > 0) {
-      // Lấy danh sách bạn của bạn bè
+      // Lấy danh sách bạn của bạn bè (FOF: Friends of Friends)
       const friendsOfFriends = await prisma.friendship.findMany({
         where: {
           OR: [...friendIds].map((id) => ({
@@ -74,10 +73,17 @@ export async function getSuggestedFriends(): Promise<User[]> {
     // Nếu chưa đủ 4, lấy thêm user ngẫu nhiên
     if (suggestedFriends.length < 4) {
       const remaining = 4 - suggestedFriends.length
+      const existingUserIds = new Set([
+        ...friendIds,
+        ...sentRequestIds,
+        userId,
+        ...suggestedFriends.map((user) => user.id)
+      ])
+
       const additionalUsers = await prisma.user.findMany({
-        where: { id: { notIn: [...friendIds, ...sentRequestIds, userId] } },
+        where: { id: { notIn: [...existingUserIds] } },
         take: remaining,
-        orderBy: { createdAt: 'desc' } // Hoặc random nếu muốn
+        orderBy: { createdAt: 'desc' }
       })
 
       suggestedFriends = [...suggestedFriends, ...additionalUsers]

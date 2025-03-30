@@ -10,13 +10,15 @@ interface SuggestedFriendBoxProps {
   name: string | null
   avatarUrl: string | null
   onAddFriend: (id: string) => void
+  loading: boolean
 }
 
 const SuggestedFriendBox: React.FC<SuggestedFriendBoxProps> = ({
   id,
   name,
   avatarUrl,
-  onAddFriend
+  onAddFriend,
+  loading
 }) => {
   const router = useRouter()
 
@@ -26,7 +28,7 @@ const SuggestedFriendBox: React.FC<SuggestedFriendBoxProps> = ({
 
   const handleAddFriend = (e: React.MouseEvent) => {
     e.stopPropagation()
-    onAddFriend(id)
+    if (!loading) onAddFriend(id)
   }
 
   return (
@@ -35,8 +37,8 @@ const SuggestedFriendBox: React.FC<SuggestedFriendBoxProps> = ({
         <CP_Avatar src={avatarUrl || '/images/placeholder.jpg'} />
         <span className='text-sm font-medium text-gray-900'>{name}</span>
       </div>
-      <Button size={'sm'} onClick={handleAddFriend}>
-        Add Friend
+      <Button size={'sm'} onClick={handleAddFriend} disabled={loading}>
+        {loading ? 'Adding...' : 'Add Friend'}
       </Button>
     </div>
   )
