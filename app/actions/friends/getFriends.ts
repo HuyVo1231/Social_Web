@@ -1,8 +1,7 @@
 import prisma from '@/app/libs/prismadb'
 import getCurrentUser from '@/app/actions/users/getCurrentUser'
-import { User } from '@prisma/client'
 
-export async function getFriends(userId?: string): Promise<User[]> {
+export async function getFriends(userId?: string) {
   try {
     let targetUserId = userId
 
@@ -29,7 +28,34 @@ export async function getFriends(userId?: string): Promise<User[]> {
       f.initiator.id === targetUserId ? f.receiver : f.initiator
     )
 
-    return friends
+    if (friends.length === 0) return []
+
+    // Lấy conversationId nếu có
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        isGroup: false,
+        userIds: { has: targetUserId }
+      },
+      select: {
+        id: true,
+        userIds: true
+      }
+    })
+
+    // Tạo map để tra cứu conversation nhanh hơn
+    const conversationMap = new Map<string, string>()
+    conversations.forEach((conv) => {
+      const friendId = conv.userIds.find((id) => id !== targetUserId)
+      if (friendId) {
+        conversationMap.set(friendId, conv.id)
+      }
+    })
+
+    // Trả về danh sách bạn bè kèm conversationId nếu có
+    return friends.map((friend) => ({
+      ...friend,
+      conversationId: conversationMap.get(friend.id) || null
+    }))
   } catch (error) {
     console.error('Lỗi khi lấy danh sách bạn bè:', error)
     return []

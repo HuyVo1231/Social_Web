@@ -58,8 +58,10 @@ export async function POST(request: Request) {
         }
       })
 
-      await pusherServer.trigger(`user-${userId}`, 'new_notification', newNotification)
-
+      await pusherServer.trigger(`user-${userId}`, 'new_notification', {
+        notification: newNotification,
+        initiator: newNotification.sender // Thêm initiator vào đây
+      })
       return NextResponse.json({ friendship }, { status: 201 })
     }
 
@@ -101,8 +103,8 @@ export async function POST(request: Request) {
         where: { id: friendship.id },
         data: { status: 'ACCEPTED' },
         include: {
-          initiator: { select: { id: true, name: true, image: true } },
-          receiver: { select: { id: true, name: true, image: true } }
+          initiator: true,
+          receiver: true
         }
       })
 
@@ -123,11 +125,15 @@ export async function POST(request: Request) {
 
       await pusherServer.trigger(`user-${userId}`, 'friend_request_update', {
         message: 'Lời mời kết bạn đã được chấp nhận.',
-        friendship: updatedFriendship
+        friendship: updatedFriendship,
+        initiator: updatedFriendship.initiator,
+        receiver: updatedFriendship.receiver
       })
 
-      await pusherServer.trigger(`user-${userId}`, 'new_notification', newNotification)
-
+      await pusherServer.trigger(`user-${userId}`, 'new_notification', {
+        notification: newNotification,
+        initiator: newNotification.sender
+      })
       return NextResponse.json(
         { message: 'Đã chấp nhận kết bạn.', updatedFriendship },
         { status: 200 }

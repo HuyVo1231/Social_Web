@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Invalid Credentials')
+          throw new Error('Invalid credentials')
         }
 
         const user = await prisma.user.findUnique({
@@ -36,6 +36,10 @@ export const authOptions: NextAuthOptions = {
 
         if (!user || !user?.hashPassword) {
           throw new Error('Invalid credentials')
+        }
+
+        if (!user.emailVerified) {
+          throw new Error('Bạn cần xác nhận email trước khi đăng nhập!')
         }
 
         const isCorrectPassword = await bcrypt.compare(credentials.password, user.hashPassword)
@@ -54,17 +58,24 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.id = user.id
+        token.emailVerified = user.emailVerified
+      }
+
+      if (account?.provider === 'credentials' && !token.emailVerified) {
+        throw new Error('Bạn cần xác nhận email trước khi đăng nhập!')
+      }
+
+      return token
+    },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
+        session.user.emailVerified = token.emailVerified as Date | null
       }
       return session
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-      }
-      return token
     }
   }
 }

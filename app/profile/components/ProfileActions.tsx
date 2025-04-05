@@ -10,21 +10,43 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { UserPlus, UserCheck, MessageCircle } from 'lucide-react'
 import useProfile from '@/app/hooks/useProfile'
+import useChat from '@/app/hooks/useChat'
+import { useParams } from 'next/navigation'
+import { fetcher } from '@/app/libs/fetcher'
+import useFriendsStore from '@/app/zustand/friendsStore'
+import toast from 'react-hot-toast'
+import { FaUserFriends } from 'react-icons/fa'
 
 export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
   const [friend, setFriend] = useState(isFriend)
   const { isOwnProfile } = useProfile()
+  const { handleChat } = useChat()
+  const { profileId } = useParams()
+  const removeFriend = useFriendsStore((state) => state.removeFriend)
 
   const handleAddFriend = () => {
     setFriend(true)
   }
 
-  const handleRemoveFriend = () => {
-    setFriend(false)
-  }
+  const handleRemoveFriend = async () => {
+    if (!profileId) return
 
-  const handleMessage = () => {
-    console.log('Nhắn tin')
+    try {
+      const response = await fetcher('/api/friends/unfriend', {
+        method: 'POST',
+        body: JSON.stringify({ userId: profileId })
+      })
+
+      if (!response) {
+        throw new Error('Lỗi khi hủy kết bạn')
+      }
+
+      removeFriend(profileId as string)
+      setFriend(false)
+      toast.success('Đã hủy kết bạn')
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   if (isOwnProfile) {
@@ -41,8 +63,12 @@ export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align='center'>
-            <DropdownMenuItem onClick={handleRemoveFriend}>Hủy kết bạn</DropdownMenuItem>
-            <DropdownMenuItem onClick={handleMessage}>
+            <DropdownMenuItem onClick={handleRemoveFriend}>
+              {' '}
+              <FaUserFriends />
+              Hủy kết bạn
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleChat((profileId as string) || '')}>
               <MessageCircle className='w-4 h-4 mr-2' /> Nhắn tin
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -52,7 +78,10 @@ export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
           <UserPlus className='w-4 h-4 mr-2' /> Thêm bạn
         </Button>
       )}
-      <Button variant='outline' className='flex items-center' onClick={handleMessage}>
+      <Button
+        variant='outline'
+        className='flex items-center'
+        onClick={() => handleChat((profileId as string) || '')}>
         <MessageCircle className='w-4 h-4 mr-2' /> Nhắn tin
       </Button>
     </div>

@@ -1,24 +1,57 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import FriendBox from './FriendBox'
-import { User } from '@prisma/client'
 import activeUsersStore from '@/app/zustand/activeUsers'
+import { fetcher } from '@/app/libs/fetcher'
+import useFriendsStore from '@/app/zustand/friendsStore'
 
-interface ListFriendsProps {
-  friends: User[]
-}
-
-const ListFriends: React.FC<ListFriendsProps> = ({ friends }) => {
+const ListFriends = () => {
   const { listActiveUser } = activeUsersStore()
-  console.log('listActiveUser', listActiveUser)
+  const { friends, setFriends } = useFriendsStore()
 
-  const friendList = useMemo(() => {
-    if (!friends || friends.length === 0) {
-      return <p className='text-gray-500 text-sm'>Không có bạn bè nào.</p>
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
+
+  const handleDropdownToggle = (id: string | null) => {
+    setOpenDropdownId((prev) => (prev === id ? null : id))
+  }
+
+  // Fetch friends data from the API using fetch and update the store
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        const response = await fetcher('/api/friends/getFriends', {
+          method: 'GET'
+        })
+        if (!response) {
+          throw new Error('Failed to fetch friends')
+        }
+        setFriends(response)
+      } catch (error) {
+        console.error('Error fetching friends:', error)
+      }
     }
 
-    return (
+    fetchFriends()
+  }, [setFriends])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.dropdown-container')) {
+        setOpenDropdownId(null)
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
+
+  const friendList =
+    friends.length === 0 ? (
+      <p className='text-gray-500 text-sm'>Không có bạn bè nào.</p>
+    ) : (
       <div className='space-y-1'>
         {friends.map((user) => (
           <FriendBox
@@ -27,11 +60,12 @@ const ListFriends: React.FC<ListFriendsProps> = ({ friends }) => {
             avatarUrl={user.image}
             id={user.id}
             isOnline={listActiveUser.includes(user.email!)}
+            isOpen={openDropdownId === user.id}
+            onToggle={() => handleDropdownToggle(user.id)}
           />
         ))}
       </div>
     )
-  }, [friends, listActiveUser]) // Cập nhật khi danh sách online thay đổi
 
   return (
     <div>

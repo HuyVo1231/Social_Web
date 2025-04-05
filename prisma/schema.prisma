@@ -12,6 +12,7 @@ model User {
   name String?
   email String? @unique
   emailVerified DateTime?
+  verificationToken String?
   image String?
   imageThumbnail String?
   phone String?
@@ -46,6 +47,7 @@ model User {
 
   sentNotifications Notification[] @relation("SentNotifications")
   receivedNotifications Notification[] @relation("ReceivedNotifications")
+  seenPostIds     String[]
 }
 
 model Notification {
@@ -164,7 +166,8 @@ model Conversation {
 model Message {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   body String?
-  image String?
+  image String[]
+  video String[]
   createdAt DateTime @default(now())
   seenIds String[] @db.ObjectId
   seen User[] @relation("Seen", fields: [seenIds], references: [id])

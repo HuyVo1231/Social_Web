@@ -74,13 +74,8 @@ const NotificationPopover = () => {
 
       if (res && action === 'accept_request') {
         updateNotificationStatus(notificationId, 'ACCEPTED')
-
         if (res.updatedFriendship) {
-          addFriend({
-            id: senderId,
-            name: res.updatedFriendship.initiator.name,
-            image: res.updatedFriendship.initiator.image
-          })
+          addFriend(res.updatedFriendship.initiator)
         }
       }
     } catch (error) {
@@ -103,16 +98,12 @@ const NotificationPopover = () => {
       )
 
       if (data.friendship.status === 'ACCEPTED') {
-        addFriend({
-          id: data.friendship.initiatorId,
-          name: data.friendship.initiator?.name || 'Unknown',
-          image: data.friendship.initiator?.image || '/images/placeholder.jpg'
-        })
+        addFriend(data.receiver)
       }
     }
 
     const handleNewNotification = (notification: NotificationType) => {
-      setNotifications((prev) => [notification, ...prev])
+      setNotifications((prev) => [notification.notification, ...prev])
     }
 
     pusherClient.bind('friend_request_update', handleFriendRequestUpdate)
@@ -140,8 +131,8 @@ const NotificationPopover = () => {
         <PopoverContent className='w-auto'>
           <div className='grid'>
             {notifications.length > 0 ? (
-              notifications.map((notification) => (
-                <div key={notification.id}>
+              notifications.map((notification, index) => (
+                <div key={index}>
                   {notification.type === 'FRIEND_REQUEST' ? (
                     <UserRequestBox
                       data={notification}

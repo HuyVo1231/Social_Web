@@ -7,8 +7,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { email, profileId } = body
 
-    console.log('profileId:', profileId)
-
     if (!email && !profileId) {
       return NextResponse.json({ error: 'Missing email or profileId' }, { status: 400 })
     }

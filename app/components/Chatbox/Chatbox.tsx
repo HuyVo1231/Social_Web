@@ -1,71 +1,57 @@
 'use client'
 
-import { useState } from 'react'
-import { MessageSquare, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { motion } from 'framer-motion'
+import useChatStore from '@/app/zustand/chatStore'
+import activeUsersStore from '@/app/zustand/activeUsers'
+import MessageList from './MessageList'
+import FormSendMessage from './FormSendMessage'
+import HeaderChatBox from './HeaderChatbox'
+import { pusherClient } from '@/app/libs/pusher'
+import { useEffect } from 'react'
+import { Message } from '@prisma/client'
 
-export default function ChatBox() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<{ text: string; sender: string }[]>([])
-  const [input, setInput] = useState('')
+export interface ChatBoxProps {
+  conversationId: string
+  index: number
+}
 
-  const sendMessage = () => {
-    if (!input.trim()) return
-    setMessages([...messages, { text: input, sender: 'user' }])
-    setInput('')
-  }
+const ChatBox: React.FC<ChatBoxProps> = ({ conversationId, index }) => {
+  const { messages, addMessage, closeChat, openChats } = useChatStore()
+  const { listActiveUser } = activeUsersStore()
+  const chatInfo = openChats.find((chat) => chat.conversationId === conversationId)
+  if (!chatInfo) return null
+  const { user } = chatInfo
+  const isOnline = listActiveUser.includes(user.email!)
+  const rightOffset = 240 + index * 320
+
+  useEffect(() => {
+    const channel = pusherClient.subscribe(conversationId)
+    channel.bind('newMessage', (newMessage: Message) => {
+      addMessage(conversationId, newMessage)
+    })
+
+    return () => {
+      pusherClient.unsubscribe(conversationId)
+    }
+  }, [conversationId])
 
   return (
-    <div className='fixed bottom-4 right-4 z-50'>
-      {!isOpen ? (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className='rounded-full w-12 h-12 flex items-center justify-center bg-blue-600 text-white shadow-lg hover:bg-blue-700'>
-          <MessageSquare size={20} />
-        </Button>
-      ) : (
-        <Card className='w-80 shadow-lg rounded-lg border border-gray-300'>
-          <CardHeader className='flex justify-between items-center p-3 bg-gray-100 rounded-t-lg'>
-            <span className='font-semibold'>Hỗ trợ trực tuyến</span>
-            <Button variant='ghost' size='icon' onClick={() => setIsOpen(false)}>
-              <X size={20} />
-            </Button>
-          </CardHeader>
-          <CardContent className='p-3'>
-            <ScrollArea className='h-60 overflow-y-auto border rounded p-2 bg-white'>
-              {messages.length > 0 ? (
-                messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`mb-2 p-2 rounded-lg text-sm max-w-[80%] ${
-                      msg.sender === 'user'
-                        ? 'bg-blue-500 text-white self-end ml-auto'
-                        : 'bg-gray-200 text-black'
-                    }`}>
-                    {msg.text}
-                  </div>
-                ))
-              ) : (
-                <p className='text-gray-500 text-sm'>Hãy bắt đầu trò chuyện...</p>
-              )}
-            </ScrollArea>
-            <div className='flex items-center gap-2 mt-3'>
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder='Nhập tin nhắn...'
-                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-              />
-              <Button onClick={sendMessage} className='bg-blue-600 text-white hover:bg-blue-700'>
-                Gửi
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    <motion.div
+      className='w-[320px] bg-white shadow-lg rounded-lg flex flex-col fixed bottom-5 z-[1000] pointer-events-auto'
+      style={{ right: `${rightOffset}px`, minHeight: '400px', maxHeight: '400px' }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}>
+      <HeaderChatBox
+        user={user}
+        isOnline={isOnline}
+        conversationId={conversationId}
+        closeChat={closeChat}
+      />
+      <MessageList messages={messages[conversationId] || []} />
+      <FormSendMessage conversationId={conversationId} />
+    </motion.div>
   )
 }
+
+export default ChatBox

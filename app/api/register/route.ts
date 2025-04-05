@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
 import prisma from '@/app/libs/prismadb'
+import { sendVerificationEmail } from '@/app/libs/email' // Import hàm gửi email xác nhận
+import { v4 as uuidv4 } from 'uuid' // Thêm thư viện tạo token (có thể dùng bất kỳ giải pháp nào bạn thích)
 
 export async function POST(request: Request) {
   try {
@@ -26,17 +28,33 @@ export async function POST(request: Request) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 12)
 
+    // Create a verification token
+    const verificationToken = uuidv4() // Sử dụng UUID để tạo token xác minh
+
     // Create the new user
-    await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         email,
         name,
-        hashPassword: hashedPassword
+        hashPassword: hashedPassword,
+        verificationToken
       }
     })
 
+    // Lưu token vào cơ sở dữ liệu (ví dụ: lưu vào một bảng hoặc trong field user)
+    await prisma.user.update({
+      where: { id: newUser.id },
+      data: { emailVerified: null, verificationToken } // Giả sử bạn đã thêm `verificationToken` vào bảng User
+    })
+
+    // Gửi email xác nhận
+    await sendVerificationEmail(email, verificationToken)
+
     return NextResponse.json(
-      { message: 'Đăng ký tài khoản thành công', status: 201 },
+      {
+        message: 'Đăng ký tài khoản thành công. Vui lòng kiểm tra email của bạn để xác nhận.',
+        status: 201
+      },
       { status: 201 }
     )
   } catch (error) {

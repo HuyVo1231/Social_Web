@@ -1,21 +1,19 @@
+import { User } from '@prisma/client'
 import { create } from 'zustand'
 
-interface Friend {
-  id: string
-  name: string
-  image: string
-}
-
 interface FriendsStore {
-  friends: Friend[]
-  addFriend: (friend: Friend) => void
-  setFriends: (friends: Friend[]) => void
+  friends: User[]
+  addFriend: (friend: User) => void
+  setFriends: (friends: User[]) => void
+  removeFriend: (userId: string) => void
 }
 
-const useFriendsStore = create<FriendsStore>((set) => ({
+const useFriendStore = create<FriendsStore>((set) => ({
   friends: [],
   addFriend: (friend) => set((state) => ({ friends: [...state.friends, friend] })),
-  setFriends: (friends) => set({ friends })
+  setFriends: (friends) => set({ friends }),
+  removeFriend: (userId) =>
+    set((state) => ({ friends: state.friends.filter((friend) => friend.id !== userId) }))
 }))
 
-export default useFriendsStore
+export default useFriendStore

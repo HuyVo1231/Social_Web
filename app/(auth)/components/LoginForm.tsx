@@ -56,6 +56,7 @@ const LoginForm = () => {
     }
   })
 
+  // Sửa phần onSubmit
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
     setIsLoading(true)
 
@@ -67,15 +68,25 @@ const LoginForm = () => {
         })
 
         toast.success(responseData.message || 'Đăng ký tài khoản thành công!')
-        await signIn('credentials', data)
+        setVariant('LOGIN')
       } else if (variant === 'LOGIN') {
-        const result = await signIn('credentials', { ...data, redirect: false })
+        const result = await signIn('credentials', {
+          ...data,
+          redirect: false
+        })
 
         if (result?.error) {
-          throw new Error('Sai tài khoản hoặc mật khẩu...')
+          // Kiểm tra thông báo lỗi cụ thể về email chưa xác nhận
+          if (result.error.includes('xác nhận email')) {
+            toast.error('Vui lòng xác nhận email để hoàn tất việc đăng nhập!')
+          } else {
+            throw new Error('Sai tài khoản hoặc mật khẩu...')
+          }
+          return
         }
 
         toast.success('Đăng nhập thành công!')
+        router.push('/home')
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Có lỗi xảy ra')

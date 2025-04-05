@@ -18,19 +18,19 @@ const UseActiveUsers = () => {
       setActiveChannel(channel)
     }
 
-    channel.bind('pusher:subscription_succeeded', (members) => {
+    channel.bind('pusher:subscription_succeeded', (members: any) => {
       const listUser: string[] = []
-      members.each((member) => {
+      members.each((member: any) => {
         listUser.push(member.id)
       })
       setActiveList(listUser)
     })
 
-    channel.bind('pusher:member_added', (member) => {
+    channel.bind('pusher:member_added', (member: any) => {
       addUser(member.id)
     })
 
-    channel.bind('pusher:member_removed', (member) => {
+    channel.bind('pusher:member_removed', (member: any) => {
       removeUser(member.id)
     })
 

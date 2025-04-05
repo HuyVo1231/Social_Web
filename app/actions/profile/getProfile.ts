@@ -8,6 +8,7 @@ interface ProfileParams {
 
 export async function getProfile({ email, profileId }: ProfileParams = {}) {
   try {
+    // 1. Lấy currentUser song song với các thao tác khác nếu có thể
     const currentUser = await getCurrentUser()
     if (!currentUser) {
       throw new Error('Unauthorized')
@@ -19,82 +20,111 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
       ? { email }
       : { id: currentUser.id }
 
-    const user = await prisma.user.findUnique({
-      where: whereCondition,
-      include: {
-        friendshipsInitiated: {
-          where: { status: 'ACCEPTED' },
-          include: { receiver: true }
-        },
-        friendshipsReceived: {
-          where: { status: 'ACCEPTED' },
-          include: { initiator: true }
-        },
-        posts: {
-          orderBy: { createdAt: 'desc' },
-          include: {
-            user: true,
-            likes: true,
-            comments: {
-              include: {
-                user: true
+    // 2. Tối ưu truy vấn chính với select thay vì include
+    const [user, currentUserFriends] = await Promise.all([
+      prisma.user.findUnique({
+        where: whereCondition,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          emailVerified: true,
+          image: true,
+          coverCrop: true,
+          imageThumbnail: true,
+          phone: true,
+          bio: true,
+          location: true,
+          work: true,
+          relationship: true,
+          hobbies: true,
+          website: true,
+          skills: true,
+          education: true,
+          createdAt: true,
+          updatedAt: true,
+          imageCrop: true,
+          friendshipsInitiated: {
+            where: { status: 'ACCEPTED' },
+            select: { receiver: { select: { id: true, name: true, image: true } } }
+          },
+          friendshipsReceived: {
+            where: { status: 'ACCEPTED' },
+            select: { initiator: { select: { id: true, name: true, image: true } } }
+          },
+          posts: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              body: true,
+              image: true,
+              createdAt: true,
+              updatedAt: true,
+              user: { select: { id: true, name: true, image: true } },
+              likes: { select: { id: true, userId: true, createdAt: true } },
+              comments: {
+                select: {
+                  id: true,
+                  body: true,
+                  createdAt: true,
+                  user: { select: { id: true, name: true, image: true } }
+                }
               }
             }
           }
         }
-      }
-    })
+      }),
+      prisma.user.findUnique({
+        where: { id: currentUser.id },
+        select: {
+          friendshipsInitiated: {
+            where: { status: 'ACCEPTED' },
+            select: { receiver: { select: { id: true, name: true, image: true } } }
+          },
+          friendshipsReceived: {
+            where: { status: 'ACCEPTED' },
+            select: { initiator: { select: { id: true, name: true, image: true } } }
+          }
+        }
+      })
+    ])
 
     if (!user) {
       throw new Error('User not found')
     }
-
-    const isOwner = user.id === currentUser.id
-
-    const userFriends = [
-      ...user.friendshipsInitiated.map((f) => f.receiver),
-      ...user.friendshipsReceived.map((f) => f.initiator)
-    ]
-
-    const currentUserFriends = await prisma.user.findUnique({
-      where: { id: currentUser.id },
-      include: {
-        friendshipsInitiated: {
-          where: { status: 'ACCEPTED' },
-          include: { receiver: true }
-        },
-        friendshipsReceived: {
-          where: { status: 'ACCEPTED' },
-          include: { initiator: true }
-        }
-      }
-    })
-
     if (!currentUserFriends) {
       throw new Error('Current user not found')
     }
 
-    const currentUserFriendsList = [
-      ...currentUserFriends.friendshipsInitiated.map((f) => f.receiver),
-      ...currentUserFriends.friendshipsReceived.map((f) => f.initiator)
-    ]
+    // 3. Xử lý dữ liệu song song
+    const [userFriends, currentUserFriendsList] = await Promise.all([
+      Promise.resolve([
+        ...user.friendshipsInitiated.map((f) => f.receiver),
+        ...user.friendshipsReceived.map((f) => f.initiator)
+      ]),
+      Promise.resolve([
+        ...currentUserFriends.friendshipsInitiated.map((f) => f.receiver),
+        ...currentUserFriends.friendshipsReceived.map((f) => f.initiator)
+      ])
+    ])
 
-    // Tính số bạn chung
-    const mutualFriends = userFriends.filter((friend) =>
-      currentUserFriendsList.some((f) => f.id === friend.id)
-    )
+    // 4. Tính toán mutual friends hiệu quả hơn
+    const currentUserFriendsIds = new Set(currentUserFriendsList.map((f) => f.id))
+    const mutualFriends = userFriends.filter((friend) => currentUserFriendsIds.has(friend.id))
 
-    const isFriend = isOwner
-      ? undefined
-      : userFriends.some((friend) => friend.id === currentUser.id)
+    const isOwner = user.id === currentUser.id
+    const isFriend = isOwner ? undefined : currentUserFriendsIds.has(user.id)
 
-    // Lấy danh sách ảnh từ bài viết (lọc những bài có ảnh hợp lệ)
+    // 5. Lọc ảnh hiệu quả
     const photos = user.posts
-      .filter((post) => post.image) // Chỉ lấy post có ảnh
+      .filter((post) => post.image)
       .map((post) => ({
         postId: post.id,
         image: post.image!
       }))
+
+    // 6. Tạo map để tính mutual friends nhanh hơn
+    const mutualFriendsMap = new Map(mutualFriends.map((f) => [f.id, f]))
 
     return {
       id: user.id,
@@ -121,37 +151,23 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
         id: friend.id,
         name: friend.name,
         image: friend.image,
-        mutualFriends: mutualFriends.filter((mf) => mf.id === friend.id).length // Số bạn chung với từng bạn bè
+        mutualFriends: mutualFriendsMap.has(friend.id) ? 1 : 0 // Giả sử mỗi bạn chỉ có 1 mutual friend
       })),
-      mutualFriendsCount: mutualFriends.length, // Tổng số bạn chung
+      mutualFriendsCount: mutualFriends.length,
       posts: user.posts.map((post) => ({
-        id: post.id,
-        body: post.body,
-        image: post.image,
+        ...post,
         createdAt: post.createdAt.toISOString(),
         updatedAt: post.updatedAt.toISOString(),
-        user: {
-          id: post.user.id,
-          name: post.user.name,
-          image: post.user.image
-        },
         likes: post.likes.map((like) => ({
-          id: like.id,
-          userId: like.userId,
+          ...like,
           createdAt: like.createdAt.toISOString()
         })),
         comments: post.comments.map((comment) => ({
-          id: comment.id,
-          body: comment.body,
-          createdAt: comment.createdAt.toISOString(),
-          user: {
-            id: comment.user.id,
-            name: comment.user.name,
-            image: comment.user.image
-          }
+          ...comment,
+          createdAt: comment.createdAt.toISOString()
         }))
       })),
-      photos, // ✅ Thêm danh sách ảnh từ bài viết
+      photos,
       isFriend
     }
   } catch (error) {
