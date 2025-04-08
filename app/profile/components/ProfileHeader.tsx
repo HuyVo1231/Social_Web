@@ -32,7 +32,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
             </div>
           </div>
           <div className='flex flex-col items-end justify-between'>
-            <ProfileActions isFriend={profile.isFriend ?? false} />
+            <ProfileActions friendshipStatus={profile.friendshipStatus} />
           </div>
         </div>
       </div>

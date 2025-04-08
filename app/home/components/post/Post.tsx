@@ -19,30 +19,31 @@ export default function Post({ post }: PostProps) {
 
   const handlePostClick = async () => {
     if (!hasSeen) {
-      // Gọi API đánh dấu bài post là đã xem
       await markPostAsSeen(session?.user?.id as string, post.id)
-
-      // Cập nhật state để đánh dấu bài post đã được xem
       setHasSeen(true)
     }
   }
 
   return (
-    <div className='w-full mx-auto rounded-xl' onClick={handlePostClick}>
+    <div className='w-full mx-auto rounded-xl'>
       <Card className='bg-gray-100 rounded-2xl p-2'>
         <PostHeader
           avatar={post.user.image!}
           name={post.user.name || 'Anonymous'}
           time={post.createdAt}
+          userId={post.user.id}
+          friendShip={post.friendshipStatus}
         />
-        <PostContent text={post.body} images={post.image} videos={post.video} />
-        <PostActions
-          postId={post.id}
-          initialLikes={post.likes.length}
-          initialComments={post.comments.length}
-          likesData={post.likes}
-          commentsData={post.comments}
-        />
+        <div onClick={handlePostClick}>
+          <PostContent text={post.body} images={post.image} videos={post.video} />
+          <PostActions
+            postId={post.id}
+            initialLikes={post.likes.length}
+            initialComments={post.comments.length}
+            likesData={post.likes}
+            commentsData={post.comments}
+          />
+        </div>
       </Card>
     </div>
   )

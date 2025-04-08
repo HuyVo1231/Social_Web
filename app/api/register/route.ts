@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
 import prisma from '@/app/libs/prismadb'
-import { sendVerificationEmail } from '@/app/libs/email' // Import hàm gửi email xác nhận
-import { v4 as uuidv4 } from 'uuid' // Thêm thư viện tạo token (có thể dùng bất kỳ giải pháp nào bạn thích)
+import { sendVerificationEmail } from '@/app/libs/email'
+import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(request: Request) {
   try {

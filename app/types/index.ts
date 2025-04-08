@@ -17,6 +17,7 @@ export type NotificationType = Notification & {
 }
 
 export type PostType = Post & {
+  friendshipStatus: 'ACCEPTED' | 'PENDING' | 'SELF' | null
   user: User
   likes: Like[]
   comments: (Comment & { user: User })[]
@@ -36,7 +37,7 @@ export type ProfileType = {
   skills: string | null
   hobbies: string[] | []
   friendsCount: number
-  isFriend?: boolean
+  friendshipStatus: 'ACCEPTED' | 'PENDING' | null
   photos: string[]
   imageCrop?: { x: number; y: number }
   friends: {

@@ -10,6 +10,7 @@ import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import useProfile from '@/app/hooks/useProfile'
 import { fetcher } from '@/app/libs/fetcher'
+import useUserStore from '@/app/zustand/userStore'
 
 interface ProfileAvatarProps {
   avatarUrl: string
@@ -18,6 +19,7 @@ interface ProfileAvatarProps {
 
 export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarProps) {
   const { isOwnProfile } = useProfile()
+  const { setUser } = useUserStore()
   const [image, setImage] = useState<string>(avatarUrl)
   const [crop, setCrop] = useState({ x: avatarCrop?.x || 0, y: avatarCrop?.y || 0 })
   const [zoom, setZoom] = useState(avatarCrop?.zoom || 1)
@@ -57,6 +59,10 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
       setImage(url)
       setPreview(null)
       setSelectedFile(null)
+      setUser((prev) => ({
+        ...prev,
+        image: url
+      }))
     } catch (error) {
       console.error('Error saving avatar:', error)
     } finally {

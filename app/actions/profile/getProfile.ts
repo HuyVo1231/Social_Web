@@ -8,19 +8,19 @@ interface ProfileParams {
 
 export async function getProfile({ email, profileId }: ProfileParams = {}) {
   try {
-    // 1. Lấy currentUser song song với các thao tác khác nếu có thể
     const currentUser = await getCurrentUser()
     if (!currentUser) {
       throw new Error('Unauthorized')
     }
 
+    const isViewingOwnProfile =
+      !profileId && (email === currentUser.email || (!email && !profileId))
     const whereCondition = profileId
       ? { id: profileId }
       : email
       ? { email }
       : { id: currentUser.id }
 
-    // 2. Tối ưu truy vấn chính với select thay vì include
     const [user, currentUserFriends] = await Promise.all([
       prisma.user.findUnique({
         where: whereCondition,
@@ -53,11 +53,17 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
             select: { initiator: { select: { id: true, name: true, image: true } } }
           },
           posts: {
+            where: isViewingOwnProfile
+              ? {} // No filter for own profile - show all posts
+              : {
+                  OR: [{ isPrivate: false }, { isPrivate: null }]
+                }, // Only public posts for others
             orderBy: { createdAt: 'desc' },
             select: {
               id: true,
               body: true,
               image: true,
+              isPrivate: true,
               createdAt: true,
               updatedAt: true,
               user: { select: { id: true, name: true, image: true } },
@@ -78,12 +84,18 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
         where: { id: currentUser.id },
         select: {
           friendshipsInitiated: {
-            where: { status: 'ACCEPTED' },
-            select: { receiver: { select: { id: true, name: true, image: true } } }
+            select: {
+              receiverId: true,
+              status: true,
+              receiver: { select: { id: true, name: true, image: true } }
+            }
           },
           friendshipsReceived: {
-            where: { status: 'ACCEPTED' },
-            select: { initiator: { select: { id: true, name: true, image: true } } }
+            select: {
+              initiatorId: true,
+              status: true,
+              initiator: { select: { id: true, name: true, image: true } }
+            }
           }
         }
       })
@@ -96,7 +108,6 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
       throw new Error('Current user not found')
     }
 
-    // 3. Xử lý dữ liệu song song
     const [userFriends, currentUserFriendsList] = await Promise.all([
       Promise.resolve([
         ...user.friendshipsInitiated.map((f) => f.receiver),
@@ -108,14 +119,44 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
       ])
     ])
 
-    // 4. Tính toán mutual friends hiệu quả hơn
-    const currentUserFriendsIds = new Set(currentUserFriendsList.map((f) => f.id))
+    // Get friendship status between current user and profile user
+    let friendshipStatus: 'ACCEPTED' | 'PENDING' | 'REJECTED' | 'BLOCKED' | 'NONE' = 'NONE'
+    const isOwner = user.id === currentUser.id
+
+    if (!isOwner) {
+      // Check if current user initiated friendship
+      const initiatedFriendship = currentUserFriends.friendshipsInitiated.find(
+        (f) => f.receiverId === user.id
+      )
+
+      // Check if current user received friendship request
+      const receivedFriendship = currentUserFriends.friendshipsReceived.find(
+        (f) => f.initiatorId === user.id
+      )
+
+      if (initiatedFriendship) {
+        friendshipStatus = initiatedFriendship.status
+      } else if (receivedFriendship) {
+        friendshipStatus = receivedFriendship.status
+      }
+    }
+
+    const currentUserFriendsIds = new Set(
+      currentUserFriendsList
+        .filter(
+          (friend) =>
+            currentUserFriends.friendshipsInitiated.some(
+              (f) => f.receiverId === friend.id && f.status === 'ACCEPTED'
+            ) ||
+            currentUserFriends.friendshipsReceived.some(
+              (f) => f.initiatorId === friend.id && f.status === 'ACCEPTED'
+            )
+        )
+        .map((f) => f.id)
+    )
+
     const mutualFriends = userFriends.filter((friend) => currentUserFriendsIds.has(friend.id))
 
-    const isOwner = user.id === currentUser.id
-    const isFriend = isOwner ? undefined : currentUserFriendsIds.has(user.id)
-
-    // 5. Lọc ảnh hiệu quả
     const photos = user.posts
       .filter((post) => post.image)
       .map((post) => ({
@@ -123,7 +164,6 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
         image: post.image!
       }))
 
-    // 6. Tạo map để tính mutual friends nhanh hơn
     const mutualFriendsMap = new Map(mutualFriends.map((f) => [f.id, f]))
 
     return {
@@ -151,7 +191,7 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
         id: friend.id,
         name: friend.name,
         image: friend.image,
-        mutualFriends: mutualFriendsMap.has(friend.id) ? 1 : 0 // Giả sử mỗi bạn chỉ có 1 mutual friend
+        mutualFriends: mutualFriendsMap.has(friend.id) ? 1 : 0
       })),
       mutualFriendsCount: mutualFriends.length,
       posts: user.posts.map((post) => ({
@@ -168,7 +208,7 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
         }))
       })),
       photos,
-      isFriend
+      friendshipStatus: isOwner ? undefined : friendshipStatus
     }
   } catch (error) {
     console.error('Lỗi khi lấy hồ sơ:', error)

@@ -9,7 +9,7 @@ interface User {
 
 interface UserState {
   user: User | null
-  setUser: (user: User) => void
+  setUser: (user: User | ((prev: User | null) => User)) => void
   clearUser: () => void
 }
 
@@ -17,7 +17,10 @@ const useUserStore = create(
   persist<UserState>(
     (set) => ({
       user: null,
-      setUser: (user) => set({ user }),
+      setUser: (user) =>
+        set((state) => ({
+          user: typeof user === 'function' ? user(state.user) : user
+        })),
       clearUser: () => set({ user: null })
     }),
     {

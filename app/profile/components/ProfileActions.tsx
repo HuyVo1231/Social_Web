@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { UserPlus, UserCheck, MessageCircle } from 'lucide-react'
+import { UserPlus, UserCheck, MessageCircle, Clock } from 'lucide-react'
 import useProfile from '@/app/hooks/useProfile'
 import useChat from '@/app/hooks/useChat'
 import { useParams } from 'next/navigation'
@@ -17,15 +17,36 @@ import useFriendsStore from '@/app/zustand/friendsStore'
 import toast from 'react-hot-toast'
 import { FaUserFriends } from 'react-icons/fa'
 
-export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
-  const [friend, setFriend] = useState(isFriend)
+export default function ProfileActions({
+  friendshipStatus
+}: {
+  friendshipStatus?: 'ACCEPTED' | 'PENDING' | null
+}) {
+  const [status, setStatus] = useState(friendshipStatus)
   const { isOwnProfile } = useProfile()
   const { handleChat } = useChat()
   const { profileId } = useParams()
   const removeFriend = useFriendsStore((state) => state.removeFriend)
 
-  const handleAddFriend = () => {
-    setFriend(true)
+  const handleAddFriend = async () => {
+    if (!profileId) return
+
+    try {
+      const response = await fetcher('/api/friends', {
+        method: 'POST',
+        body: JSON.stringify({ userId: profileId, action: 'send_request' })
+      })
+
+      if (!response) {
+        throw new Error('Lỗi khi gửi yêu cầu kết bạn')
+      }
+
+      setStatus('PENDING')
+      toast.success('Đã gửi yêu cầu kết bạn')
+    } catch (error) {
+      console.error(error)
+      toast.error('Gửi yêu cầu thất bại')
+    }
   }
 
   const handleRemoveFriend = async () => {
@@ -42,8 +63,28 @@ export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
       }
 
       removeFriend(profileId as string)
-      setFriend(false)
+      setStatus(null)
       toast.success('Đã hủy kết bạn')
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const handleCancelRequest = async () => {
+    if (!profileId) return
+
+    try {
+      const response = await fetcher('/api/friends/cancel-request', {
+        method: 'POST',
+        body: JSON.stringify({ userId: profileId })
+      })
+
+      if (!response) {
+        throw new Error('Lỗi khi hủy yêu cầu kết bạn')
+      }
+
+      setStatus(null)
+      toast.success('Đã hủy yêu cầu kết bạn')
     } catch (error) {
       console.error(error)
     }
@@ -55,7 +96,7 @@ export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
 
   return (
     <div className='mt-6 flex gap-3'>
-      {friend ? (
+      {status === 'ACCEPTED' ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant='outline' className='flex items-center'>
@@ -64,8 +105,7 @@ export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align='center'>
             <DropdownMenuItem onClick={handleRemoveFriend}>
-              {' '}
-              <FaUserFriends />
+              <FaUserFriends className='w-4 h-4 mr-2' />
               Hủy kết bạn
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleChat((profileId as string) || '')}>
@@ -73,11 +113,28 @@ export default function ProfileActions({ isFriend }: { isFriend?: boolean }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      ) : status === 'PENDING' ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='outline' className='flex items-center'>
+              <Clock className='w-4 h-4 mr-2' /> Đã gửi lời mời
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='center'>
+            <DropdownMenuItem onClick={handleCancelRequest}>
+              <FaUserFriends className='w-4 h-4 mr-2' />
+              Hủy yêu cầu
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : (
-        <Button onClick={handleAddFriend} className='flex items-center'>
-          <UserPlus className='w-4 h-4 mr-2' /> Thêm bạn
-        </Button>
+        <>
+          <Button onClick={handleAddFriend} className='flex items-center'>
+            <UserPlus className='w-4 h-4 mr-2' /> Thêm bạn
+          </Button>
+        </>
       )}
+
       <Button
         variant='outline'
         className='flex items-center'

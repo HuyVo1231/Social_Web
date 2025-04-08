@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { FaCalendarAlt, FaImage, FaSmile, FaVideo } from 'react-icons/fa'
-import { useSession } from 'next-auth/react'
 import {
   Select,
   SelectTrigger,
@@ -22,26 +21,30 @@ import { ClipLoader } from 'react-spinners'
 import { uploadToCloudinary } from '@/app/hooks/useUpload'
 import MediaPreview from '@/app/components/Media/MediaPreview'
 import CP_Avatar from '@/app/components/Avatar/Avatar'
+import useUserStore from '@/app/zustand/userStore'
 
 const CreatePost = () => {
-  const { data: session } = useSession()
-  const user = session?.user
+  const { user } = useUserStore()
   const { addPost } = usePostStore()
   const [open, setOpen] = useState(false)
   const [postText, setPostText] = useState('')
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [videoPreviews, setVideoPreviews] = useState<string[]>([])
-  const [privacy, setPrivacy] = useState('public')
+  const [isPrivate, setIsPrivate] = useState(false)
+  const [suggestedCaption, setSuggestedCaption] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Sử dụng React- Dropzone
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setLoading(true)
     for (const file of acceptedFiles) {
       try {
         const url = await uploadToCloudinary(file)
         if (file.type.startsWith('image/')) {
-          setImagePreviews((prev) => [...prev, url])
+          setImagePreviews((prev) => {
+            const updated = [...prev, url]
+            if (updated.length === 1) generateCaption(url)
+            return updated
+          })
         } else if (file.type.startsWith('video/')) {
           setVideoPreviews((prev) => [...prev, url])
         }
@@ -59,6 +62,34 @@ const CreatePost = () => {
     onDrop
   })
 
+  const generateCaption = async (imageUrl: string) => {
+    try {
+      const res = await fetch('/api/generate-caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl })
+      })
+      const data = await res.json()
+      if (data?.caption) {
+        setSuggestedCaption(data.caption)
+        toast.success('Caption gợi ý đã sẵn sàng! Nhấn Tab để áp dụng.')
+      } else {
+        toast.error('Không tạo được caption từ ảnh!')
+      }
+    } catch (err) {
+      console.error('Lỗi gọi API caption:', err)
+      toast.error('Có lỗi khi tạo caption!')
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab' && suggestedCaption) {
+      e.preventDefault()
+      setPostText(suggestedCaption)
+      setSuggestedCaption('')
+    }
+  }
+
   const handleSubmit = async () => {
     if (!postText.trim() && imagePreviews.length === 0 && videoPreviews.length === 0) {
       return toast.error('Bạn chưa nhập nội dung hoặc chọn ảnh/video!')
@@ -68,7 +99,7 @@ const CreatePost = () => {
       body: postText,
       images: imagePreviews,
       videos: videoPreviews,
-      privacy
+      isPrivate
     }
 
     try {
@@ -95,20 +126,19 @@ const CreatePost = () => {
   }
 
   return (
-    <div className='bg-white rounded-lg p-4 '>
+    <div className='bg-white rounded-lg p-4'>
       <div className='flex items-center gap-3'>
         <CP_Avatar src={user?.image || '/images/placeholder.jpg'} />
         <Input
           type='text'
           placeholder={`What's on your mind, ${user?.name || 'User'}?`}
-          className='w-full py-3 px-4 text-lg bg-gray-100 text-gray-800 placeholder-gray-500 rounded-full cursor-pointer border-none outline-none focus:bg-gray-100 focus:shadow-sm'
+          className='w-full py-3 px-4 text-lg bg-gray-100 text-gray-800 placeholder-gray-500 rounded-full cursor-pointer border-none outline-none'
           onClick={() => setOpen(true)}
           readOnly
         />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild></DialogTrigger>
           <DialogTitle />
-
           <DialogContent className='w-full max-w-lg'>
             <h2 className='text-xl font-semibold mb-2 flex justify-center text-gray-900'>
               Create post
@@ -119,7 +149,9 @@ const CreatePost = () => {
                 <CP_Avatar src={user?.image || '/images/placeholder.jpg'} size={48} />
                 <div>
                   <p className='text-lg font-semibold text-gray-900'>{user?.name || 'User'}</p>
-                  <Select onValueChange={setPrivacy} defaultValue={privacy}>
+                  <Select
+                    onValueChange={(value) => setIsPrivate(value === 'private')}
+                    defaultValue='public'>
                     <SelectTrigger className='w-28 text-sm'>
                       <SelectValue placeholder='Chọn quyền riêng tư' />
                     </SelectTrigger>
@@ -133,13 +165,16 @@ const CreatePost = () => {
             </div>
 
             <Textarea
-              placeholder='Bạn đang nghĩ gì?'
+              placeholder={suggestedCaption || 'Bạn đang nghĩ gì?'}
               value={postText}
               onChange={(e) => setPostText(e.target.value)}
+              onKeyDown={handleKeyDown}
               className='w-full min-h-[120px] text-lg text-gray-900 bg-transparent focus:ring-0 focus:outline-none border-none placeholder-gray-500'
+              style={{
+                color: postText ? 'inherit' : suggestedCaption ? 'gray' : 'inherit'
+              }}
             />
 
-            {/* Khu vực kéo/thả hoặc chọn file */}
             <div
               {...getRootProps()}
               className='border-2 border-dashed border-gray-300 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-100 mt-3 w-full'>
@@ -148,7 +183,7 @@ const CreatePost = () => {
                 <FaImage className='text-green-500' /> Kéo/thả hoặc chọn ảnh/video để tải lên
               </p>
             </div>
-            {/* Hiển thị loading spinner */}
+
             {loading && (
               <div className='flex justify-center mt-4'>
                 <div>Đang upload dữ liệu.</div>
@@ -187,6 +222,7 @@ const CreatePost = () => {
           </DialogContent>
         </Dialog>
       </div>
+
       <div className='flex flex-wrap items-center justify-between mt-4 border-t pt-4'>
         <PostActionButton icon={<FaVideo />} label='Live Stream' color='blue' />
         <PostActionButton icon={<FaImage />} label='Post Image/Video' color='green' />

@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Chưa đăng nhập.' }, { status: 401 })
     }
 
-    const { body, images, videos } = await req.json()
+    const { body, images, videos, isPrivate } = await req.json()
 
     // Kiểm tra dữ liệu hợp lệ
     if (!body && (!images || images.length === 0) && (!videos || videos.length === 0)) {
@@ -21,6 +21,7 @@ export async function POST(req: Request) {
         body: body || '',
         image: images || [],
         video: videos || [],
+        isPrivate: isPrivate,
         userId: currentUser.id
       },
       include: {

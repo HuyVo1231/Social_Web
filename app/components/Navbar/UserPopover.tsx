@@ -1,14 +1,14 @@
+'use client'
+
 import { ChevronDown } from 'lucide-react'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import ButtonLogout from './ButtonLogout'
-import { User } from '@prisma/client'
 import CP_Avatar from '../Avatar/Avatar'
+import useUserStore from '@/app/zustand/userStore'
 
-interface UserPopoverProps {
-  user: User | null
-}
+const UserPopover = () => {
+  const { user } = useUserStore()
 
-const UserPopover: React.FC<UserPopoverProps> = ({ user }) => {
   return (
     <div className='flex items-center space-x-4'>
       <Popover>
