@@ -6,34 +6,12 @@ export async function getPosts() {
     const currentUser = await getCurrentUser()
     if (!currentUser) return []
 
-    const seenPostIds = currentUser.seenPostIds || []
-
-    // Get current user's posts (regardless of isPrivate status)
-    const myPosts = await prisma.post.findMany({
-      where: {
-        userId: currentUser.id
-      },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: true,
-        likes: true,
-        comments: {
-          include: {
-            user: true
-          }
-        }
-      }
-    })
-
-    // Get other users' posts where:
-    // - isPrivate is false OR
-    // - isPrivate is not set (null/undefined)
-    const otherPosts = await prisma.post.findMany({
+    // Lấy các bài viết của người khác và là công khai (isPrivate = false/null/undefined)
+    const publicPostsFromOthers = await prisma.post.findMany({
       where: {
         userId: { not: currentUser.id },
-        OR: [{ isPrivate: false }, { isPrivate: null }]
+        OR: [{ isPrivate: false }, { isPrivate: null }, { isPrivate: { equals: undefined } }]
       },
-      orderBy: { createdAt: 'desc' },
       include: {
         user: true,
         likes: true,
@@ -45,46 +23,38 @@ export async function getPosts() {
       }
     })
 
-    // Combine and sort by creation time (newest first)
-    const allPosts = [...myPosts, ...otherPosts].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-    )
-
-    // Get all friendships where currentUser is either initiator or receiver
+    // Lấy thông tin friendship
     const friendships = await prisma.friendship.findMany({
       where: {
         OR: [{ initiatorId: currentUser.id }, { receiverId: currentUser.id }]
       }
     })
 
-    // Mark seen posts and add friendship status
-    const postsWithSeenStatusAndFriendship = await Promise.all(
-      allPosts.map(async (post) => {
-        // Check if the post belongs to current user
-        if (post.userId === currentUser.id) {
-          return {
-            ...post,
-            seen: seenPostIds.includes(post.id),
-            friendshipStatus: 'SELF' // Special status for own posts
-          }
-        }
+    // Thêm metadata: friendshipStatus
+    const postsWithMetadata = publicPostsFromOthers.map((post) => {
+      const friendship = friendships.find(
+        (f) =>
+          (f.initiatorId === currentUser.id && f.receiverId === post.userId) ||
+          (f.initiatorId === post.userId && f.receiverId === currentUser.id)
+      )
 
-        // Find friendship between current user and post owner
-        const friendship = friendships.find(
-          (f) =>
-            (f.initiatorId === currentUser.id && f.receiverId === post.userId) ||
-            (f.initiatorId === post.userId && f.receiverId === currentUser.id)
-        )
+      return {
+        ...post,
+        friendshipStatus: friendship ? friendship.status : null
+      }
+    })
 
-        return {
-          ...post,
-          seen: seenPostIds.includes(post.id),
-          friendshipStatus: friendship ? friendship.status : null
-        }
-      })
+    // Lọc trùng bài viết theo post.id
+    const uniquePosts = Array.from(
+      new Map(postsWithMetadata.map((post) => [post.id, post])).values()
     )
 
-    return postsWithSeenStatusAndFriendship
+    // Sắp xếp theo thời gian giảm dần
+    const sortedPosts = uniquePosts.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+
+    return sortedPosts
   } catch (error) {
     console.error('GET POSTS ERROR:', error)
     return []
