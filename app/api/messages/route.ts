@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       })
     ])
 
-    pusherServer
+    await pusherServer
       .trigger(conversationId, 'newMessage', newMessage)
       .catch((error) => console.error('Lỗi Pusher', error))
 

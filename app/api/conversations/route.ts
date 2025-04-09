@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       })
 
       // Không chờ Pusher hoàn thành
-      Promise.all(
+      await Promise.all(
         newConversation.users.map((user) =>
           user.email
             ? pusherServer.trigger(user.email, 'newConversation', newConversation)
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     const chattingUser = newConversation.users.find((user) => user.id !== currentUser.id)
 
     // Gửi Pusher không đồng bộ
-    Promise.all(
+    await Promise.all(
       newConversation.users.map((user) =>
         user.email
           ? pusherServer.trigger(user.email, 'newConversation', newConversation)
