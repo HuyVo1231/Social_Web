@@ -3,7 +3,8 @@
 import { User } from '@prisma/client'
 import CP_Avatar from '../Avatar/Avatar'
 import { X, Video } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
+import { fetcher } from '@/app/libs/fetcher'
 
 export interface HeaderChatBoxProps {
   user: User
@@ -21,16 +22,13 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleVideoCall = async () => {
+  const handleVideoCall = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/callvideo/token', {
+      const response = await fetcher('/api/callvideo/token', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           identity: user.id,
           room: conversationId,
@@ -51,7 +49,11 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, conversationId])
+
+  const handleCloseChat = useCallback(() => {
+    closeChat(conversationId)
+  }, [closeChat, conversationId])
 
   return (
     <div className='flex items-center justify-between p-2 border-b bg-blue-200 rounded-lg'>
@@ -70,9 +72,7 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
         </button>
         {loading && <span className='text-sm text-gray-500'>Loading...</span>}
         {error && <span className='text-sm text-red-500'>{error}</span>}
-        <button
-          onClick={() => closeChat(conversationId)}
-          className='text-gray-500 hover:text-red-500'>
+        <button onClick={handleCloseChat} className='text-gray-500 hover:text-red-500'>
           <X size={20} />
         </button>
       </div>

@@ -9,6 +9,15 @@ interface PostStore {
 
 export const usePostStore = create<PostStore>((set) => ({
   posts: [],
-  addPost: (post) => set((state) => ({ posts: [post, ...state.posts] })),
+  addPost: (post) => {
+    set((state) => {
+      console.log('🆕 Post được thêm:', post)
+      console.log('📦 State TRƯỚC:', state.posts)
+      const newPosts = [post, ...state.posts]
+      console.log('✅ State SAU:', newPosts)
+      return { posts: newPosts }
+    })
+  },
+
   setPosts: (posts) => set({ posts })
 }))

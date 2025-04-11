@@ -3,6 +3,7 @@ import ProfilePage from './components/ProfilePage'
 
 export default async function Page() {
   const profile = await getProfile()
+
   if (!profile) {
     return (
       <div className='flex justify-center items-center h-screen'>Không tìm thấy hồ sơ của bạn.</div>

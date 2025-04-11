@@ -3,7 +3,6 @@ import { getProfile } from '@/app/actions/profile/getProfile'
 
 export async function POST(req: NextRequest) {
   try {
-    // Lấy dữ liệu từ body của request
     const body = await req.json()
     const { email, profileId } = body
 

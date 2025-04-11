@@ -41,7 +41,7 @@ export default function Profile() {
       </div>
     )
 
-  if (!profile) return <p className='text-center'>User not found</p>
+  if (!profile) return <p className='text-center'>Không tìm thấy hồ sơ</p>
 
   return <ProfilePage profile={profile} />
 }

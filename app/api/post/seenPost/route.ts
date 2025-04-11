@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       where: { id: userId },
       data: {
         seenPostIds: {
-          push: postId // Thêm postId vào danh sách bài post đã xem
+          push: postId
         }
       }
     })

@@ -5,7 +5,6 @@ import { pusherServer } from '@/app/libs/pusher'
 
 export async function POST(request: Request) {
   try {
-    // Chạy song song lấy currentUser và parse request body
     const [currentUser, body] = await Promise.all([getCurrentUser(), request.json()])
 
     const { userId, isGroup, members, name } = body
@@ -14,6 +13,7 @@ export async function POST(request: Request) {
       return new NextResponse('Chưa xác thực', { status: 401 })
     }
 
+    // Trường hợp tạo Group Conversation.
     if (isGroup) {
       if (!members || members.length < 2 || !name) {
         return new NextResponse('Dữ liệu không hợp lệ', { status: 400 })
@@ -33,7 +33,6 @@ export async function POST(request: Request) {
         include: { users: true }
       })
 
-      // Không chờ Pusher hoàn thành
       await Promise.all(
         newConversation.users.map((user) =>
           user.email
@@ -60,7 +59,6 @@ export async function POST(request: Request) {
           }
         }
       })
-      // Có thể thêm các thao tác khác cần chạy song song ở đây
     ])
 
     if (existingConversation) {
@@ -84,7 +82,6 @@ export async function POST(request: Request) {
 
     const chattingUser = newConversation.users.find((user) => user.id !== currentUser.id)
 
-    // Gửi Pusher không đồng bộ
     await Promise.all(
       newConversation.users.map((user) =>
         user.email

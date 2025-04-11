@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import useProfile from '@/app/hooks/useProfile'
 import { fetcher } from '@/app/libs/fetcher'
 import useUserStore from '@/app/zustand/userStore'
+import toast from 'react-hot-toast'
 
 interface ProfileAvatarProps {
   avatarUrl: string
@@ -63,6 +64,7 @@ export default function ProfileAvatar({ avatarUrl, avatarCrop }: ProfileAvatarPr
         ...prev,
         image: url
       }))
+      toast.success('Cập nhật Avatar thành công.')
     } catch (error) {
       console.error('Error saving avatar:', error)
     } finally {

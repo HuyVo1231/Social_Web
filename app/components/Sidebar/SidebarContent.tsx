@@ -28,16 +28,27 @@ export default function SidebarContent() {
       <Separator className='my-4' />
       <h3 className='text-md font-bold text-gray-900 px-2 mt-4'>Favourites</h3>
 
-      {favouriteRoutes.map((route) => (
-        <Link key={route.label} href={route.href} passHref className='block'>
+      {favouriteRoutes.map((route) => {
+        const content = (
           <Button
             variant='ghost'
-            className='w-full justify-start rounded-lg text-gray-900 hover:bg-gray-100 transition pl-4'>
+            className='w-full justify-start rounded-lg text-gray-900 hover:bg-gray-100 transition pl-4'
+            disabled={route.disabled}>
             <route.icon className='mr-2 h-5 w-5 text-gray-500' />
             {route.label}
           </Button>
-        </Link>
-      ))}
+        )
+
+        return route.disabled ? (
+          <div key={route.label} className='block'>
+            {content}
+          </div>
+        ) : (
+          <Link key={route.label} href={route.href} passHref className='block'>
+            {content}
+          </Link>
+        )
+      })}
     </div>
   )
 }

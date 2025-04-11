@@ -59,7 +59,7 @@ export default function ProfileCover({
       await fetcher('/api/profile/change-profile', {
         method: 'PUT',
         body: JSON.stringify({
-          cover: newCover,
+          imageThumbnail: newCover,
           coverCrop: { x: 0, y: currentY }
         })
       })

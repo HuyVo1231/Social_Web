@@ -42,7 +42,7 @@ export async function getSuggestedFriends(): Promise<User[]> {
     let suggestedFriends: User[] = []
 
     if (friendIds.size > 0) {
-      // Lấy danh sách bạn của bạn bè (FOF: Friends of Friends)
+      // Lấy danh sách bạn của bạn bè
       const friendsOfFriends = await prisma.friendship.findMany({
         where: {
           OR: [...friendIds].map((id) => ({
@@ -70,7 +70,7 @@ export async function getSuggestedFriends(): Promise<User[]> {
       })
     }
 
-    // Nếu chưa đủ 4, lấy thêm user ngẫu nhiên
+    // Nếu chưa đủ 4, lấy thêm user khác
     if (suggestedFriends.length < 4) {
       const remaining = 4 - suggestedFriends.length
       const existingUserIds = new Set([

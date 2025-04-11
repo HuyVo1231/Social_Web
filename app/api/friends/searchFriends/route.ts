@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     const users = await prisma.user.findMany({
       where: {
         id: { not: currentUser.id },
-        ...(query && { name: { contains: query, mode: 'insensitive' } }) // Tìm kiếm không phân biệt hoa thường
+        ...(query && { name: { contains: query, mode: 'insensitive' } })
       },
       include: {
         friendshipsInitiated: true,
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
       }
     })
 
-    // Sắp xếp theo số bạn chung (nhiều bạn chung lên trước)
+    // Sắp xếp theo số bạn chung
     usersWithMutualFriends.sort((a, b) => b.mutualFriends - a.mutualFriends)
 
     return NextResponse.json({ friends: usersWithMutualFriends }, { status: 200 })

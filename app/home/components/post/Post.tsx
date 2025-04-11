@@ -6,8 +6,8 @@ import PostHeader from './PostHeader'
 import PostContent from './PostContent'
 import PostActions from './PostActions'
 import { PostType } from '@/app/types'
-import { markPostAsSeen } from '@/app/utils/postAPI'
 import { useSession } from 'next-auth/react'
+import { fetcher } from '@/app/libs/fetcher'
 
 interface PostProps {
   post: PostType
@@ -16,6 +16,22 @@ interface PostProps {
 export default function Post({ post }: PostProps) {
   const [hasSeen, setHasSeen] = useState(false)
   const { data: session } = useSession()
+
+  const markPostAsSeen = async (userId: string, postId: string) => {
+    try {
+      const response = await fetcher('/api/post/seenPost', {
+        method: 'POST',
+        body: JSON.stringify({ userId, postId })
+      })
+
+      if (response) {
+      } else {
+        console.error(response)
+      }
+    } catch (error) {
+      console.error('Error marking post as seen:', error)
+    }
+  }
 
   const handlePostClick = async () => {
     if (!hasSeen) {

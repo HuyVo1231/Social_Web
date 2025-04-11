@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if the user already exists
+    // Kiểm tra user đã tồn tại
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
@@ -25,13 +25,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Tài khoản đã tồn tại.', status: 409 }, { status: 409 })
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create a verification token
-    const verificationToken = uuidv4() // Sử dụng UUID để tạo token xác minh
+    // Sử dụng UUID để tạo token xác minh
+    const verificationToken = uuidv4()
 
-    // Create the new user
     const newUser = await prisma.user.create({
       data: {
         email,
@@ -41,10 +39,10 @@ export async function POST(request: Request) {
       }
     })
 
-    // Lưu token vào cơ sở dữ liệu (ví dụ: lưu vào một bảng hoặc trong field user)
+    // Lưu token vào cơ sở dữ liệu
     await prisma.user.update({
       where: { id: newUser.id },
-      data: { emailVerified: null, verificationToken } // Giả sử bạn đã thêm `verificationToken` vào bảng User
+      data: { emailVerified: null, verificationToken }
     })
 
     // Gửi email xác nhận

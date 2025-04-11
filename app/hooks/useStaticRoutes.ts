@@ -4,11 +4,11 @@ import { Rss, Settings, Users, BookOpen, Image } from 'lucide-react'
 const useStaticRoutes = () => {
   return useMemo(
     () => [
-      { label: 'Feed', href: '/feed', icon: Rss },
-      { label: 'Friends', href: '/friends', icon: Users },
-      { label: 'Stories', href: '/stories', icon: BookOpen },
-      { label: 'Memories', href: '/memories', icon: Image },
-      { label: 'Settings', href: '/settings', icon: Settings }
+      { label: 'Feed', href: '/feed', icon: Rss, disabled: true },
+      { label: 'Friends', href: '/friends', icon: Users, disabled: true },
+      { label: 'Stories', href: '/stories', icon: BookOpen, disabled: true },
+      { label: 'Memories', href: '/memories', icon: Image, disabled: true },
+      { label: 'Settings', href: '/settings', icon: Settings, disabled: false }
     ],
     []
   )

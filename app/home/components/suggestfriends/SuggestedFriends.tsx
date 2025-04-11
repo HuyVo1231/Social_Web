@@ -15,7 +15,7 @@ export default function SuggestedFriends({ friends: initialFriends }: SuggestedF
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({})
 
   const handleAddFriend = async (userId: string) => {
-    if (loading[userId]) return // Nếu đang loading, không cho click tiếp
+    if (loading[userId]) return
 
     setLoading((prev) => ({ ...prev, [userId]: true }))
 

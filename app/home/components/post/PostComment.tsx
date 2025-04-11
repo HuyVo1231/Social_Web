@@ -49,7 +49,7 @@ export default function PostComment({
       })
 
       if (response?.comment) {
-        setAllComments((prev) => [response.comment, ...prev]) // Thêm vào danh sách đầy đủ
+        setAllComments((prev) => [response.comment, ...prev])
         updateCommentsCount()
         reset()
       }

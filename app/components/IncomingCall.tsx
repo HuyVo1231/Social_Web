@@ -71,7 +71,7 @@ const IncomingCall = () => {
             : 'Bạn có cuộc gọi đến'}
         </div>
         <DialogFooter className='mt-4 flex justify-center gap-4'>
-          <Button variant='success' onClick={acceptCall}>
+          <Button variant='default' onClick={acceptCall}>
             Chấp nhận
           </Button>
           <Button variant='destructive' onClick={declineCall}>

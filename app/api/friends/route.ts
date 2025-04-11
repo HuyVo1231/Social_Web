@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Người dùng không tồn tại.' }, { status: 404 })
     }
 
+    // Trường hợp gửi lời mời kết bạn.
     if (action === 'send_request') {
       const existingFriendship = await prisma.friendship.findFirst({
         where: {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
           ]
         }
       })
-
+      // Nếu đã tồn tại lời mời kết bạn trước đó thì chấp nhận luôn.
       if (existingFriendship) {
         if (existingFriendship.status === 'PENDING') {
           return NextResponse.json({ message: 'Lời mời đã được gửi trước đó.' }, { status: 400 })
@@ -60,11 +61,12 @@ export async function POST(request: Request) {
 
       await pusherServer.trigger(`user-${userId}`, 'new_notification', {
         notification: newNotification,
-        initiator: newNotification.sender // Thêm initiator vào đây
+        initiator: newNotification.sender
       })
       return NextResponse.json({ friendship }, { status: 201 })
     }
 
+    // Trường hợp accept hoặc reject.
     if (action === 'accept_request' || action === 'reject_request') {
       const friendship = await prisma.friendship.findFirst({
         where: {
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
         )
       }
 
+      // Xóa lời mời kết bạn
       if (action === 'reject_request') {
         await prisma.friendship.delete({
           where: { id: friendship.id }

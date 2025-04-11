@@ -17,7 +17,8 @@ export async function PUT(req: NextRequest) {
       hobbies,
       bio,
       website,
-      skills
+      skills,
+      name
     } = body
     const currentUser = await getCurrentUser()
     if (!currentUser) {
@@ -38,7 +39,8 @@ export async function PUT(req: NextRequest) {
         hobbies,
         bio,
         website,
-        skills
+        skills,
+        name
       }
     })
 

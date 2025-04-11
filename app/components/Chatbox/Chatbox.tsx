@@ -7,9 +7,8 @@ import MessageList from './MessageList'
 import FormSendMessage from './FormSendMessage'
 import HeaderChatBox from './HeaderChatbox'
 import { pusherClient } from '@/app/libs/pusher'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Message } from '@prisma/client'
-
 export interface ChatBoxProps {
   conversationId: string
   index: number
@@ -18,11 +17,6 @@ export interface ChatBoxProps {
 const ChatBox: React.FC<ChatBoxProps> = ({ conversationId, index }) => {
   const { messages, addMessage, closeChat, openChats } = useChatStore()
   const { listActiveUser } = activeUsersStore()
-  const chatInfo = openChats.find((chat) => chat.conversationId === conversationId)
-  if (!chatInfo) return null
-  const { user } = chatInfo
-  const isOnline = listActiveUser.includes(user.email!)
-  const rightOffset = 240 + index * 320
 
   useEffect(() => {
     const channel = pusherClient.subscribe(conversationId)
@@ -33,7 +27,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({ conversationId, index }) => {
     return () => {
       pusherClient.unsubscribe(conversationId)
     }
-  }, [conversationId])
+  }, [conversationId, addMessage])
+
+  const chatInfo = useMemo(
+    () => openChats.find((chat) => chat.conversationId === conversationId),
+    [openChats, conversationId]
+  )
+
+  if (!chatInfo) return null
+
+  const { user } = chatInfo
+  const isOnline = listActiveUser.includes(user.email!)
+  const rightOffset = 240 + index * 320
 
   return (
     <motion.div

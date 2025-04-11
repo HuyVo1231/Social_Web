@@ -1,5 +1,3 @@
-'use client'
-
 import { PostMedia } from './PostMedia'
 
 interface PostContentProps {

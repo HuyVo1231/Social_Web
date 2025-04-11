@@ -8,8 +8,8 @@ interface PostListProps {
 export default function PostList({ posts }: PostListProps) {
   return (
     <div className='space-y-4'>
-      {posts.map((post, index) => (
-        <Post key={index} post={post} />
+      {posts.map((post) => (
+        <Post key={post.id} post={post} />
       ))}
     </div>
   )

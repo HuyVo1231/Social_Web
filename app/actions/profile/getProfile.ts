@@ -119,17 +119,14 @@ export async function getProfile({ email, profileId }: ProfileParams = {}) {
       ])
     ])
 
-    // Get friendship status between current user and profile user
     let friendshipStatus: 'ACCEPTED' | 'PENDING' | 'REJECTED' | 'BLOCKED' | 'NONE' = 'NONE'
     const isOwner = user.id === currentUser.id
 
     if (!isOwner) {
-      // Check if current user initiated friendship
       const initiatedFriendship = currentUserFriends.friendshipsInitiated.find(
         (f) => f.receiverId === user.id
       )
 
-      // Check if current user received friendship request
       const receivedFriendship = currentUserFriends.friendshipsReceived.find(
         (f) => f.initiatorId === user.id
       )

@@ -12,7 +12,6 @@ interface ListConversationProps {
 const ListConversation: React.FC<ListConversationProps> = ({ conversations }) => {
   const [isOpen, setIsOpen] = useState(false)
 
-  // Lọc ra những hội thoại có ít nhất 1 tin nhắn
   const filteredConversations = conversations.filter(
     (conversation) => conversation.messages.length > 0
   )

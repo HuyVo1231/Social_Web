@@ -16,7 +16,6 @@ const ListFriends = () => {
     setOpenDropdownId((prev) => (prev === id ? null : id))
   }
 
-  // Fetch friends data from the API using fetch and update the store
   useEffect(() => {
     const fetchFriends = async () => {
       try {
@@ -35,7 +34,6 @@ const ListFriends = () => {
     fetchFriends()
   }, [setFriends])
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
