@@ -16,9 +16,17 @@ interface PostHeaderProps {
   time: Date
   userId: string
   friendShip: 'ACCEPTED' | 'PENDING' | 'SELF' | null
+  onEdit: () => void
 }
 
-export default function PostHeader({ avatar, name, time, userId, friendShip }: PostHeaderProps) {
+export default function PostHeader({
+  avatar,
+  name,
+  time,
+  userId,
+  friendShip,
+  onEdit
+}: PostHeaderProps) {
   const postTime = new Date(time)
   const router = useRouter()
   const { data: session } = useSession()
@@ -76,7 +84,6 @@ export default function PostHeader({ avatar, name, time, userId, friendShip }: P
               {name}
             </p>
 
-            {/* Friend status / actions */}
             {!isSelf && currentStatus === null && (
               <Button
                 variant='ghost'
@@ -99,6 +106,16 @@ export default function PostHeader({ avatar, name, time, userId, friendShip }: P
 
           <p className='text-sm text-gray-500'>{formattedTime}</p>
         </div>
+
+        {isSelf && (
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={onEdit}
+            className='h-6 px-2 text-xs text-blue-500 hover:text-blue-600 hover:bg-blue-50'>
+            Chỉnh sửa
+          </Button>
+        )}
       </div>
     </div>
   )

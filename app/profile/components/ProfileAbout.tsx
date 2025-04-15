@@ -52,7 +52,7 @@ export default function ProfileAbout({ profile }: ProfileAboutProps) {
   })
 
   const locationValue = watch('location')
-  const [debouncedLocation] = useDebounce(locationValue, 500)
+  const [debouncedLocation] = useDebounce(locationValue, 200)
 
   useEffect(() => {
     const fetchLocationSuggestions = async () => {

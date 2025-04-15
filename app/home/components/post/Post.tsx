@@ -8,6 +8,7 @@ import PostActions from './PostActions'
 import { PostType } from '@/app/types'
 import { useSession } from 'next-auth/react'
 import { fetcher } from '@/app/libs/fetcher'
+import EditPostDialog from './EditPostDialog'
 
 interface PostProps {
   post: PostType
@@ -16,6 +17,8 @@ interface PostProps {
 export default function Post({ post }: PostProps) {
   const [hasSeen, setHasSeen] = useState(false)
   const { data: session } = useSession()
+  const [isEditing, setIsEditing] = useState(false)
+  const [postData, setPostData] = useState<PostType>(post)
 
   const markPostAsSeen = async (userId: string, postId: string) => {
     try {
@@ -44,23 +47,37 @@ export default function Post({ post }: PostProps) {
     <div className='w-full mx-auto rounded-xl'>
       <Card className='bg-gray-100 rounded-2xl p-2'>
         <PostHeader
-          avatar={post.user.image!}
-          name={post.user.name || 'Anonymous'}
-          time={post.createdAt}
-          userId={post.user.id}
-          friendShip={post.friendshipStatus}
+          avatar={postData.user?.image || '/images/placeholder.jpg'}
+          name={postData.user?.name || 'Anonymous'}
+          time={postData.createdAt}
+          userId={postData.user?.id || ''}
+          onEdit={() => setIsEditing(true)}
+          friendShip={postData.friendshipStatus}
         />
         <div onClick={handlePostClick}>
-          <PostContent text={post.body} images={post.image} videos={post.video} />
+          <PostContent text={postData.body} images={postData.image} videos={postData.video} />
           <PostActions
-            postId={post.id}
-            initialLikes={post.likes.length}
-            initialComments={post.comments.length}
-            likesData={post.likes}
-            commentsData={post.comments}
+            postId={postData.id}
+            initialLikes={postData.likes.length}
+            initialComments={postData.comments.length}
+            likesData={postData.likes}
+            commentsData={postData.comments}
           />
         </div>
       </Card>
+      <EditPostDialog
+        isOpen={isEditing}
+        onClose={() => setIsEditing(false)}
+        post={postData}
+        onUpdate={(updatedPost) => {
+          setPostData((prevPostData) => ({
+            ...prevPostData,
+            ...updatedPost,
+            updatedAt: new Date()
+          }))
+          setIsEditing(false)
+        }}
+      />
     </div>
   )
 }
