@@ -19,13 +19,20 @@ export async function POST(request: Request) {
         return new NextResponse('Dữ liệu không hợp lệ', { status: 400 })
       }
 
+      // Lọc các thành viên hợp lệ (không có giá trị null hoặc undefined)
+      const validMembers = members.filter((member: string) => member)
+
+      if (validMembers.length < 2) {
+        return new NextResponse('Cần ít nhất 2 thành viên để tạo nhóm', { status: 400 })
+      }
+
       const newConversation = await prisma.conversation.create({
         data: {
           isGroup,
           name,
           users: {
             connect: [
-              ...members.map((member: { value: string }) => ({ id: member.value })),
+              ...validMembers.map((member: string) => ({ id: member })),
               { id: currentUser.id }
             ]
           }
@@ -33,6 +40,7 @@ export async function POST(request: Request) {
         include: { users: true }
       })
 
+      // Gửi thông báo cho tất cả người dùng trong nhóm
       await Promise.all(
         newConversation.users.map((user) =>
           user.email
@@ -66,7 +74,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ...existingConversation, chattingUser })
     }
 
-    // Tạo conversation mới
+    // Tạo conversation mới nếu không có cuộc trò chuyện
     const newConversation = await prisma.conversation.create({
       data: {
         isGroup: false,

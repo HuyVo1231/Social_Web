@@ -36,9 +36,11 @@ const ChatBox: React.FC<ChatBoxProps> = ({ conversationId, index }) => {
 
   if (!chatInfo) return null
 
-  const { user } = chatInfo
-  const isOnline = listActiveUser.includes(user.email!)
+  const { user, group, conversationName } = chatInfo
+  const isOnline = user?.email ? listActiveUser.includes(user.email) : false
   const rightOffset = 240 + index * 320
+
+  const title = group ? conversationName || 'Nhóm không tên' : user?.name || 'Người dùng'
 
   return (
     <motion.div
@@ -49,6 +51,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ conversationId, index }) => {
       transition={{ duration: 0.3 }}>
       <HeaderChatBox
         user={user}
+        title={title}
         isOnline={isOnline}
         conversationId={conversationId}
         closeChat={closeChat}

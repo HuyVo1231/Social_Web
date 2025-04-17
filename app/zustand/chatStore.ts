@@ -2,10 +2,20 @@ import { create } from 'zustand'
 import { Message, User } from '@prisma/client'
 
 interface ChatState {
-  openChats: { conversationId: string; user: User }[]
+  openChats: {
+    conversationId: string
+    user?: User
+    group?: boolean
+    conversationName?: string
+  }[]
   messages: Record<string, Message[]>
 
-  openChat: (conversationId: string, user: User) => void
+  openChat: (
+    conversationId: string,
+    user?: User,
+    group?: boolean,
+    conversationName?: string
+  ) => void
   closeChat: (conversationId: string) => void
   addMessage: (conversationId: string, message: Message) => void
 }
@@ -14,11 +24,11 @@ const useChatStore = create<ChatState>((set) => ({
   openChats: [],
   messages: {},
 
-  openChat: (conversationId, user) => {
+  openChat: (conversationId, user, group = false, conversationName) => {
     set((state) => ({
       openChats: state.openChats.some((chat) => chat.conversationId === conversationId)
         ? state.openChats
-        : [...state.openChats, { conversationId, user }]
+        : [...state.openChats, { conversationId, user, group, conversationName }]
     }))
   },
 

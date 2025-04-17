@@ -48,7 +48,7 @@ const ListFriends = () => {
 
   const friendList =
     friends.length === 0 ? (
-      <p className='text-gray-500 text-sm'>Không có bạn bè nào.</p>
+      <p className='text-gray-500 text-sm'>No friends.</p>
     ) : (
       <div className='space-y-1'>
         {friends.map((user) => (

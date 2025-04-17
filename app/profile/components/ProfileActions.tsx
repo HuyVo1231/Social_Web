@@ -74,7 +74,7 @@ export default function ProfileActions({
     if (!profileId) return
 
     try {
-      const response = await fetcher('/api/friends/cancel-request', {
+      const response = await fetcher('/api/friends/unfriend', {
         method: 'POST',
         body: JSON.stringify({ userId: profileId })
       })

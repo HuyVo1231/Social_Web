@@ -11,13 +11,15 @@ export interface HeaderChatBoxProps {
   isOnline: boolean
   conversationId: string
   closeChat: (conversationId: string) => void
+  title: string
 }
 
 const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
   user,
   isOnline,
   conversationId,
-  closeChat
+  closeChat,
+  title
 }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,7 +63,7 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
         <div className='relative'>
           <CP_Avatar src={user.image || '/images/placeholder.jpg'} isOnline={isOnline} />
         </div>
-        <span className='font-semibold text-gray-900'>{user.name}</span>
+        <span className='font-semibold text-gray-900'>{title}</span>
       </div>
       <div className='flex gap-3'>
         <button

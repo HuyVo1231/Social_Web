@@ -1,7 +1,7 @@
 import getCurrentUser from '../users/getCurrentUser'
 import prisma from '@/app/libs/prismadb'
 
-const getConversations = async () => {
+const getGroupConversations = async () => {
   const currentUser = await getCurrentUser()
 
   if (!currentUser?.id) {
@@ -29,13 +29,15 @@ const getConversations = async () => {
       }
     })
 
-    // Loại bỏ trùng theo id
-    const uniqueConversations = Array.from(new Map(conversations.map((c) => [c.id, c])).values())
-    return uniqueConversations
+    const filteredConversations = conversations.filter(
+      (conversation) => conversation.userIds.length >= 3
+    )
+
+    return filteredConversations || []
   } catch (error) {
     console.error(error)
     return []
   }
 }
 
-export default getConversations
+export default getGroupConversations

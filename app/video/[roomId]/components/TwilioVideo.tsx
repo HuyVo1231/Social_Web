@@ -34,8 +34,8 @@ export function TwilioVideo({ token, room }: TwilioVideoProps) {
         // Kết nối vào phòng Twilio
         const roomInstance = await connect(token, {
           name: room,
-          audio: true, // Sử dụng audio mặc định
-          video: true // Bật video
+          audio: true,
+          video: true
         })
 
         roomRef.current = roomInstance // Lưu lại room để ngắt kết nối sau này

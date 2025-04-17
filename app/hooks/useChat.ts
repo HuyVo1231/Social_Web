@@ -14,8 +14,7 @@ const useChat = () => {
     if (!chat) {
       const response = await fetcher('/api/conversations', {
         method: 'POST',
-        body: JSON.stringify({ userId }),
-        headers: { 'Content-Type': 'application/json' }
+        body: JSON.stringify({ userId })
       })
 
       if (response?.id) {
