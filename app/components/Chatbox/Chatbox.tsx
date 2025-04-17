@@ -12,9 +12,10 @@ import { Message } from '@prisma/client'
 export interface ChatBoxProps {
   conversationId: string
   index: number
+  isGroup?: boolean
 }
 
-const ChatBox: React.FC<ChatBoxProps> = ({ conversationId, index }) => {
+const ChatBox: React.FC<ChatBoxProps> = ({ conversationId, index, isGroup }) => {
   const { messages, addMessage, closeChat, openChats } = useChatStore()
   const { listActiveUser } = activeUsersStore()
 
@@ -44,18 +45,21 @@ const ChatBox: React.FC<ChatBoxProps> = ({ conversationId, index }) => {
 
   return (
     <motion.div
-      className='w-[320px] bg-white shadow-lg rounded-lg flex flex-col fixed bottom-5 z-[1000] pointer-events-auto'
+      className='w-[320px] bg-white shadow-lg rounded-lg flex flex-col fixed bottom-5 pointer-events-auto'
       style={{ right: `${rightOffset}px`, minHeight: '400px', maxHeight: '400px' }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}>
       <HeaderChatBox
         user={user}
+        isGroup={isGroup}
+        members={user || []}
         title={title}
         isOnline={isOnline}
         conversationId={conversationId}
         closeChat={closeChat}
       />
+
       <MessageList messages={messages[conversationId] || []} />
       <FormSendMessage conversationId={conversationId} />
     </motion.div>

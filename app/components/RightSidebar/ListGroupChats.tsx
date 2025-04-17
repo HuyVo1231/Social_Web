@@ -1,19 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MdOutlineGroupAdd } from 'react-icons/md'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { toast } from 'react-hot-toast'
-
-import GroupChatBox from './GroupChatBox'
-import { FullConversationType } from '@/app/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { fetcher } from '@/app/libs/fetcher'
+import { FullConversationType } from '@/app/types'
 import MultiSelect from '../MultiSelect/MultiSelect'
 import useFriendStore from '@/app/zustand/friendsStore'
+import GroupChatBox from './GroupChatBox'
+import { fetcher } from '@/app/libs/fetcher'
+import { pusherClient } from '@/app/libs/pusher'
 
 interface Props {
   groupChats: FullConversationType[]
@@ -21,6 +22,10 @@ interface Props {
 
 const ListGroupChats: React.FC<Props> = ({ groupChats }) => {
   const router = useRouter()
+  const { data: session } = useSession()
+  const currentEmail = session?.user?.email
+
+  const [groupConversations, setGroupConversations] = useState(groupChats)
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -63,6 +68,24 @@ const ListGroupChats: React.FC<Props> = ({ groupChats }) => {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!currentEmail) return
+
+    const handleNewConversation = (conversation: FullConversationType) => {
+      if (conversation.isGroup && !groupConversations.some((c) => c.id === conversation.id)) {
+        setGroupConversations((prev) => [conversation, ...prev])
+      }
+    }
+
+    pusherClient.subscribe(currentEmail)
+    pusherClient.bind('newConversation', handleNewConversation)
+
+    return () => {
+      pusherClient.unbind('newConversation', handleNewConversation)
+      pusherClient.unsubscribe(currentEmail)
+    }
+  }, [currentEmail, groupConversations])
 
   return (
     <>
@@ -122,16 +145,16 @@ const ListGroupChats: React.FC<Props> = ({ groupChats }) => {
           </Button>
         </div>
 
-        {groupChats.length === 0 ? (
+        {groupConversations.length === 0 ? (
           <p className='text-gray-500 text-sm'>Không có nhóm nào.</p>
         ) : (
           <div className='space-y-1'>
-            {groupChats.map((group) => (
+            {groupConversations.map((group) => (
               <GroupChatBox
+                members={group.users}
                 key={group.id}
                 id={group.id}
                 name={group.name || 'Không name'}
-                avatarUrl='/images/placeholder.jpg'
                 isOpen={openDropdownId === group.id}
                 onToggle={() => handleDropdownToggle(group.id)}
               />

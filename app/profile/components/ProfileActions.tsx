@@ -27,7 +27,6 @@ export default function ProfileActions({
   const { handleChat } = useChat()
   const { profileId } = useParams()
   const removeFriend = useFriendsStore((state) => state.removeFriend)
-
   const handleAddFriend = async () => {
     if (!profileId) return
 

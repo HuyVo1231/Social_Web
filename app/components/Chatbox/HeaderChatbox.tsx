@@ -2,9 +2,12 @@
 
 import { User } from '@prisma/client'
 import CP_Avatar from '../Avatar/Avatar'
-import { X, Video } from 'lucide-react'
+import AvatarGroup from '../Avatar/AvatarGroup'
 import { useCallback, useState } from 'react'
 import { fetcher } from '@/app/libs/fetcher'
+import { X, Video, LogOut } from 'lucide-react'
+import LeaveGroupConfirmModal from './LeaveGroupConfirmModal'
+import toast from 'react-hot-toast'
 
 export interface HeaderChatBoxProps {
   user: User
@@ -12,6 +15,9 @@ export interface HeaderChatBoxProps {
   conversationId: string
   closeChat: (conversationId: string) => void
   title: string
+  isGroup?: boolean
+  members?: User[]
+  onLeaveConversation?: () => void
 }
 
 const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
@@ -19,7 +25,9 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
   isOnline,
   conversationId,
   closeChat,
-  title
+  title,
+  isGroup,
+  members = []
 }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,15 +65,50 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
     closeChat(conversationId)
   }, [closeChat, conversationId])
 
+  const handleLeaveConversation = async () => {
+    const response = await fetcher('/api/conversations/leaveConversation', {
+      method: 'POST',
+      body: JSON.stringify({
+        conversationId: conversationId
+      }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response) {
+      console.error('Failed to leave the group')
+      return
+    }
+
+    toast.success('Leave the group success')
+
+    closeChat(conversationId)
+  }
+
   return (
     <div className='flex items-center justify-between p-2 border-b bg-blue-200 rounded-lg'>
       <div className='flex items-center gap-3'>
         <div className='relative'>
-          <CP_Avatar src={user.image || '/images/placeholder.jpg'} isOnline={isOnline} />
+          {isGroup ? (
+            <AvatarGroup users={members} />
+          ) : (
+            <CP_Avatar src={user.image || '/images/placeholder.jpg'} isOnline={isOnline} />
+          )}
         </div>
         <span className='font-semibold text-gray-900'>{title}</span>
       </div>
       <div className='flex gap-3'>
+        {isGroup && (
+          <LeaveGroupConfirmModal
+            onConfirm={handleLeaveConversation}
+            trigger={
+              <button className='text-gray-500 hover:text-yellow-600' title='Rời khỏi nhóm'>
+                <LogOut size={20} />
+              </button>
+            }
+          />
+        )}
         <button
           onClick={handleVideoCall}
           className='text-gray-500 hover:text-blue-500'

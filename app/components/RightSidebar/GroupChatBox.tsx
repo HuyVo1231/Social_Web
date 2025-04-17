@@ -1,22 +1,22 @@
 'use client'
 
 import React from 'react'
-import CP_Avatar from '../Avatar/Avatar'
 import { MoreVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import useFetchGroupConversation from '@/app/hooks/useFetchGroupConversation'
+import CP_AvatarGroup from '../Avatar/AvatarGroup'
+import { User } from '@prisma/client'
 
 interface GroupChatBoxProps {
+  members: User[]
   name: string
-  avatarUrl: string
   id: string
   isOpen: boolean
   onToggle: () => void
 }
 
-const GroupChatBox: React.FC<GroupChatBoxProps> = ({ name, avatarUrl, id, isOpen, onToggle }) => {
+const GroupChatBox: React.FC<GroupChatBoxProps> = ({ members, name, id, isOpen, onToggle }) => {
   const { fetchGroupConversation, loading } = useFetchGroupConversation()
-
   const handleClick = () => {
     onToggle()
     fetchGroupConversation(id, name)
@@ -28,7 +28,7 @@ const GroupChatBox: React.FC<GroupChatBoxProps> = ({ name, avatarUrl, id, isOpen
         className='flex items-center gap-3 bg-gray-100 p-2 rounded-lg hover:bg-gray-200 cursor-pointer transition relative'
         onClick={onToggle}>
         <div className='relative'>
-          <CP_Avatar src={avatarUrl || '/images/group-placeholder.png'} />
+          <CP_AvatarGroup users={members} />
         </div>
 
         <span className='text-sm font-medium text-gray-900 flex-1 truncate'>

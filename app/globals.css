@@ -68,3 +68,10 @@ body,
   z-index: 10000 !important;
 }
 /* CKEditor Content Styles */
+.custom-dialog {
+  z-index: 101 !important;
+}
+
+.custom-dialog-overlay {
+  z-index: 100 !important;
+}
