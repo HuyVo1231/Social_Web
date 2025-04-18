@@ -23,10 +23,8 @@ export default function CP_Avatar({ src, size = 40, isOnline = false }: AvatarPr
         <Image
           src={src || '/images/placeholder.jpg'}
           alt='avatar'
-          layout='fill'
-          objectFit='cover'
-          className='absolute top-0 left-0 w-full h-full'
-          style={{ clipPath: 'circle(50%)' }}
+          fill
+          style={{ objectFit: 'cover', clipPath: 'circle(50%)' }}
         />
       </Avatar>
       {isOnline && (

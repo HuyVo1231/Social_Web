@@ -2,137 +2,99 @@
 
 import { useEffect, useState } from 'react'
 import { MdOutlineGroupAdd } from 'react-icons/md'
-import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { toast } from 'react-hot-toast'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { FullConversationType } from '@/app/types'
-import MultiSelect from '../MultiSelect/MultiSelect'
-import useFriendStore from '@/app/zustand/friendsStore'
 import GroupChatBox from './GroupChatBox'
-import { fetcher } from '@/app/libs/fetcher'
+import useFriendStore from '@/app/zustand/friendsStore'
 import { pusherClient } from '@/app/libs/pusher'
+import { FullConversationType } from '@/app/types'
+import useGroupConversationStore from '@/app/zustand/groupConversation'
+import { fetcher } from '@/app/libs/fetcher'
+import CreateGroupModal from './CreateGroupModal'
 
-interface Props {
-  groupChats: FullConversationType[]
-}
-
-const ListGroupChats: React.FC<Props> = ({ groupChats }) => {
-  const router = useRouter()
+const ListGroupChats = () => {
   const { data: session } = useSession()
   const currentEmail = session?.user?.email
-
-  const [groupConversations, setGroupConversations] = useState(groupChats)
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
-  const { register, handleSubmit, setValue, watch, reset } = useForm({
-    defaultValues: {
-      name: '',
-      members: [] as string[]
-    }
-  })
-
-  const members = watch('members')
   const friends = useFriendStore((state) => state.friends)
+  const groupConversations = useGroupConversationStore((state) => {
+    return state.groupConversations
+  })
+  const setGroupConversations = useGroupConversationStore((state) => state.setGroups)
+  const addGroupConversation = useGroupConversationStore((state) => state.addGroup)
+  const updateGroupConversation = useGroupConversationStore((state) => state.updateGroup)
 
   const handleDropdownToggle = (id: string | null) => {
     setOpenDropdownId((prev) => (prev === id ? null : id))
   }
 
-  const handleCreateGroup = async (data: any) => {
-    if (data.members.length < 2) {
-      toast.error('Cần ít nhất 2 thành viên để tạo nhóm.')
+  useEffect(() => {
+    const fetchGroupConversations = async () => {
+      try {
+        const res = await fetcher('/api/conversations/getGroupConversation')
+        setGroupConversations(res)
+      } catch (err) {
+        console.error('Lỗi khi fetch group conversations', err)
+      }
+    }
+
+    fetchGroupConversations()
+  }, [setGroupConversations])
+
+  useEffect(() => {
+    if (!currentEmail) {
       return
     }
 
-    setIsLoading(true)
-    try {
-      await fetcher('/api/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, isGroup: true })
-      })
-
-      toast.success('Tạo nhóm thành công!')
-      router.refresh()
-      setIsModalOpen(false)
-      reset()
-    } catch (err: any) {
-      toast.error(err.message || 'Đã xảy ra lỗi.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!currentEmail) return
-
+    // Xử lý khi tạo nhóm mới
     const handleNewConversation = (conversation: FullConversationType) => {
-      if (conversation.isGroup && !groupConversations.some((c) => c.id === conversation.id)) {
-        setGroupConversations((prev) => [conversation, ...prev])
+      if (conversation.isGroup) {
+        addGroupConversation(conversation)
+      }
+    }
+
+    // Xử lý khi thêm thành viên mới vào nhóm
+    const handleAddMember = (data: { conversation: FullConversationType }) => {
+      if (data.conversation.isGroup) {
+        addGroupConversation(data.conversation)
+      }
+    }
+
+    // Xử lý cập nhật nhóm (cho thành viên hiện tại)
+    const handleConversationUpdate = ({
+      conversation,
+      action,
+      newMemberIds
+    }: {
+      conversation: FullConversationType
+      action: string
+      newMemberIds?: string[]
+    }) => {
+      console.log('Received conversation:update:', { action, conversationId: conversation.id })
+      if (action === 'member_added') {
+        updateGroupConversation(conversation)
       }
     }
 
     pusherClient.subscribe(currentEmail)
     pusherClient.bind('newConversation', handleNewConversation)
+    pusherClient.bind('add_member', handleAddMember)
+    pusherClient.bind('conversation:update', handleConversationUpdate)
 
     return () => {
       pusherClient.unbind('newConversation', handleNewConversation)
+      pusherClient.unbind('add_member', handleAddMember)
+      pusherClient.unbind('conversation:update', handleConversationUpdate)
       pusherClient.unsubscribe(currentEmail)
     }
-  }, [currentEmail, groupConversations])
+  }, [currentEmail, addGroupConversation, updateGroupConversation])
 
   return (
     <>
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className='sm:max-w-md'>
-          <DialogHeader>
-            <DialogTitle>Tạo nhóm trò chuyện</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit(handleCreateGroup)} className='space-y-4'>
-            <Input
-              placeholder='Tên nhóm'
-              {...register('name', { required: true })}
-              disabled={isLoading}
-            />
+      <CreateGroupModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} friends={friends} />
 
-            <MultiSelect
-              value={members.map((id) => {
-                const friend = friends.find((f) => f.id === id)
-                return { value: id, label: friend?.name || 'Unknown' }
-              })}
-              options={friends.map((friend) => ({
-                label: friend.name || 'Unknown',
-                value: friend.id
-              }))}
-              onChange={(selected) =>
-                setValue(
-                  'members',
-                  selected.map((s) => s.value),
-                  { shouldValidate: true }
-                )
-              }
-              isDisabled={isLoading}
-            />
-
-            <div className='flex justify-end gap-2 pt-4'>
-              <Button type='button' variant='outline' onClick={() => setIsModalOpen(false)}>
-                Huỷ
-              </Button>
-              <Button type='submit' disabled={isLoading}>
-                Tạo nhóm
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Danh sách nhóm */}
       <div>
         <div className='flex items-center justify-between mb-3'>
           <h2 className='text-sm font-semibold text-black -tracking-tighter'>Nhóm trò chuyện</h2>
@@ -140,7 +102,10 @@ const ListGroupChats: React.FC<Props> = ({ groupChats }) => {
             variant='ghost'
             size='icon'
             className='p-1 hover:bg-gray-100'
-            onClick={() => setIsModalOpen(true)}>
+            onClick={() => {
+              console.log('Create group button clicked')
+              setIsModalOpen(true)
+            }}>
             <MdOutlineGroupAdd size={20} className='text-gray-700' />
           </Button>
         </div>

@@ -5,9 +5,11 @@ import CP_Avatar from '../Avatar/Avatar'
 import AvatarGroup from '../Avatar/AvatarGroup'
 import { useCallback, useState } from 'react'
 import { fetcher } from '@/app/libs/fetcher'
-import { X, Video, LogOut } from 'lucide-react'
+import { X, Video, LogOut, UserPlus } from 'lucide-react'
 import LeaveGroupConfirmModal from './LeaveGroupConfirmModal'
 import toast from 'react-hot-toast'
+import useGroupConversationStore from '@/app/zustand/groupConversation'
+import AddGroupMembersModal from './AddGroupMembersModal'
 
 export interface HeaderChatBoxProps {
   user: User
@@ -31,6 +33,8 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
 }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const removeGroup = useGroupConversationStore((state) => state.removeGroup)
+  const [openAddMember, setOpenAddMember] = useState(false)
 
   const handleVideoCall = useCallback(async () => {
     try {
@@ -70,10 +74,7 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
       method: 'POST',
       body: JSON.stringify({
         conversationId: conversationId
-      }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      })
     })
 
     if (!response) {
@@ -82,7 +83,7 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
     }
 
     toast.success('Leave the group success')
-
+    removeGroup(conversationId)
     closeChat(conversationId)
   }
 
@@ -98,28 +99,49 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
         </div>
         <span className='font-semibold text-gray-900'>{title}</span>
       </div>
-      <div className='flex gap-3'>
+      <div className='flex gap-3 items-center'>
         {isGroup && (
-          <LeaveGroupConfirmModal
-            onConfirm={handleLeaveConversation}
-            trigger={
-              <button className='text-gray-500 hover:text-yellow-600' title='Rời khỏi nhóm'>
-                <LogOut size={20} />
-              </button>
-            }
-          />
+          <>
+            <button
+              onClick={() => setOpenAddMember(true)}
+              className='text-gray-500 hover:text-green-600'
+              title='Thêm thành viên'>
+              <UserPlus size={20} />
+            </button>
+            <LeaveGroupConfirmModal
+              onConfirm={handleLeaveConversation}
+              trigger={
+                <button className='text-gray-500 hover:text-yellow-600' title='Rời khỏi nhóm'>
+                  <LogOut size={20} />
+                </button>
+              }
+            />
+          </>
         )}
         <button
           onClick={handleVideoCall}
           className='text-gray-500 hover:text-blue-500'
-          disabled={loading}>
+          disabled={loading}
+          title='Gọi video'>
           <Video size={20} />
         </button>
         {loading && <span className='text-sm text-gray-500'>Loading...</span>}
         {error && <span className='text-sm text-red-500'>{error}</span>}
-        <button onClick={handleCloseChat} className='text-gray-500 hover:text-red-500'>
+        <button
+          onClick={handleCloseChat}
+          className='text-gray-500 hover:text-red-500'
+          title='Đóng chat'>
           <X size={20} />
         </button>
+        {isGroup && (
+          <AddGroupMembersModal
+            isOpen={openAddMember}
+            onOpenChange={setOpenAddMember}
+            currentMembers={members}
+            conversationId={conversationId}
+            onMembersAdded={() => {}}
+          />
+        )}
       </div>
     </div>
   )

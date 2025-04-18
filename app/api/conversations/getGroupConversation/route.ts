@@ -1,11 +1,12 @@
-import getCurrentUser from '../users/getCurrentUser'
+import { NextResponse } from 'next/server'
+import getCurrentUser from '@/app/actions/users/getCurrentUser'
 import prisma from '@/app/libs/prismadb'
 
-const getGroupConversations = async () => {
+export async function GET() {
   const currentUser = await getCurrentUser()
 
   if (!currentUser?.id) {
-    return []
+    return NextResponse.json([], { status: 401 })
   }
 
   try {
@@ -33,11 +34,9 @@ const getGroupConversations = async () => {
       (conversation) => conversation.userIds.length >= 3
     )
 
-    return filteredConversations || []
+    return NextResponse.json(filteredConversations)
   } catch (error) {
-    console.error(error)
-    return []
+    console.error('[GET_GROUP_CONVERSATIONS_ERROR]', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
-
-export default getGroupConversations
