@@ -11,13 +11,13 @@ import { FullConversationType } from '@/app/types'
 import useGroupConversationStore from '@/app/zustand/groupConversation'
 import { fetcher } from '@/app/libs/fetcher'
 import CreateGroupModal from './CreateGroupModal'
+import useChatStore from '@/app/zustand/chatStore'
 
 const ListGroupChats = () => {
   const { data: session } = useSession()
   const currentEmail = session?.user?.email
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-
   const friends = useFriendStore((state) => state.friends)
   const groupConversations = useGroupConversationStore((state) => {
     return state.groupConversations
@@ -63,18 +63,37 @@ const ListGroupChats = () => {
     }
 
     // Xử lý cập nhật nhóm (cho thành viên hiện tại)
+
     const handleConversationUpdate = ({
       conversation,
-      action,
-      newMemberIds
+      action
     }: {
       conversation: FullConversationType
       action: string
-      newMemberIds?: string[]
     }) => {
-      console.log('Received conversation:update:', { action, conversationId: conversation.id })
-      if (action === 'member_added') {
+      if (conversation.isGroup) {
         updateGroupConversation(conversation)
+
+        if (action === 'user_left') {
+          // Cập nhật chatStore nếu cuộc trò chuyện đang mở
+          const chatStore = useChatStore.getState()
+          const openChats = chatStore.openChats
+          const isChatOpen = openChats.some((chat) => chat.conversationId === conversation.id)
+
+          if (isChatOpen) {
+            const updatedOpenChats = openChats.map((chat) =>
+              chat.conversationId === conversation.id
+                ? {
+                    ...conversation, // Lấy dữ liệu mới từ conversation cập nhật
+                    conversationId: conversation.id, // Đảm bảo đúng field cho chatStore
+                    group: true
+                  }
+                : chat
+            )
+            console.log('updatedOpenChats: ', updatedOpenChats)
+            useChatStore.setState({ openChats: updatedOpenChats })
+          }
+        }
       }
     }
 

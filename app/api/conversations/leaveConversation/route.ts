@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       where: { id: conversationId },
       data: {
         users: {
-          disconnect: {
+          connect: {
             id: currentUser.id
           }
         }
