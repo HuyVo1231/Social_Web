@@ -71,40 +71,43 @@ const ListGroupChats = () => {
       conversation: FullConversationType
       action: string
     }) => {
-      if (conversation.isGroup) {
-        updateGroupConversation(conversation)
+      if (!conversation.isGroup) return
 
-        if (action === 'user_left') {
-          // Cập nhật chatStore nếu cuộc trò chuyện đang mở
-          const chatStore = useChatStore.getState()
-          const openChats = chatStore.openChats
-          const isChatOpen = openChats.some((chat) => chat.conversationId === conversation.id)
+      updateGroupConversation(conversation)
 
-          if (isChatOpen) {
-            const updatedOpenChats = openChats.map((chat) =>
-              chat.conversationId === conversation.id
-                ? {
-                    ...conversation, // Lấy dữ liệu mới từ conversation cập nhật
-                    conversationId: conversation.id, // Đảm bảo đúng field cho chatStore
-                    group: true
-                  }
-                : chat
-            )
-            console.log('updatedOpenChats: ', updatedOpenChats)
-            useChatStore.setState({ openChats: updatedOpenChats })
-          }
-        }
+      const chatStore = useChatStore.getState()
+      const openChats = chatStore.openChats
+      const isChatOpen = openChats.some((chat) => chat.conversationId === conversation.id)
+
+      // Nếu nhóm đang mở, thì update lại openChats
+      if (isChatOpen && (action === 'user_left' || action === 'member_added')) {
+        const updatedOpenChats = openChats.map((chat) =>
+          chat.conversationId === conversation.id
+            ? {
+                ...conversation,
+                conversationId: conversation.id,
+                group: true,
+                user: conversation.users,
+                conversationName: conversation.name || 'Không tên'
+              }
+            : chat
+        )
+
+        useChatStore.setState((prev) => ({
+          ...prev,
+          openChats: updatedOpenChats
+        }))
       }
     }
 
     pusherClient.subscribe(currentEmail)
     pusherClient.bind('newConversation', handleNewConversation)
-    pusherClient.bind('add_member', handleAddMember)
+    pusherClient.bind('conversation:add', handleAddMember)
     pusherClient.bind('conversation:update', handleConversationUpdate)
 
     return () => {
       pusherClient.unbind('newConversation', handleNewConversation)
-      pusherClient.unbind('add_member', handleAddMember)
+      pusherClient.unbind('conversation:add', handleAddMember)
       pusherClient.unbind('conversation:update', handleConversationUpdate)
       pusherClient.unsubscribe(currentEmail)
     }

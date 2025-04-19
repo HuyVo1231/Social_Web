@@ -4,7 +4,7 @@ import { Message, User } from '@prisma/client'
 interface ChatState {
   openChats: {
     conversationId: string
-    user?: User
+    user?: User | User[]
     group?: boolean
     conversationName?: string
   }[]

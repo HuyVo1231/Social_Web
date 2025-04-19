@@ -78,6 +78,7 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
     })
 
     if (!response) {
+      toast.error('Something went wrong!')
       console.error('Failed to leave the group')
       return
     }

@@ -21,6 +21,7 @@ import { uploadToCloudinary } from '@/app/hooks/useUpload'
 import MediaPreview from '@/app/components/Media/MediaPreview'
 import { fetcher } from '@/app/libs/fetcher'
 import { usePostStore } from '@/app/zustand/postStore'
+import { Input } from '@/components/ui/input'
 
 interface CreatePostDialogProps {
   open: boolean
@@ -36,6 +37,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [isPrivate, setIsPrivate] = useState(false)
   const [suggestedCaption, setSuggestedCaption] = useState('')
   const [loading, setLoading] = useState(false)
+  const [imagePrompt, setImagePrompt] = useState('')
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setLoading(true)
@@ -80,6 +82,34 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     } catch (err) {
       console.log('err', err)
       toast.error('Không tạo được caption!')
+    }
+  }
+
+  const generateImage = async () => {
+    if (!imagePrompt.trim()) {
+      return toast.error('Vui lòng nhập mô tả để tạo hình ảnh!')
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetcher('/api/generate-image', {
+        method: 'POST',
+        body: JSON.stringify({ prompt: imagePrompt })
+      })
+
+      const imageUrl = response?.data?.images?.[0]?.url
+      if (imageUrl) {
+        setImagePreviews((prev) => [...prev, imageUrl])
+        toast.success('Tạo hình ảnh thành công!')
+      } else {
+        toast.error('Không thể tạo hình ảnh!')
+      }
+    } catch (error: any) {
+      console.error('Error generating image:', error)
+      toast.error(`Lỗi khi tạo hình ảnh: ${error.message}`)
+    } finally {
+      setLoading(false)
+      setImagePrompt('')
     }
   }
 
@@ -166,6 +196,21 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           }}
         />
 
+        <div className='mt-3'>
+          <Input
+            placeholder='Nhập mô tả để tạo hình ảnh (ví dụ: Một chú mèo bay trên mây, phong cách anime)'
+            value={imagePrompt}
+            onChange={(e) => setImagePrompt(e.target.value)}
+            className='w-full'
+          />
+          <Button
+            onClick={generateImage}
+            disabled={loading || !imagePrompt.trim()}
+            className='mt-2 w-full'>
+            {loading ? <ClipLoader color='#fff' size={20} /> : 'Tạo hình ảnh bằng AI'}
+          </Button>
+        </div>
+
         <div
           {...getRootProps()}
           className='border-2 border-dashed border-gray-300 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-100 mt-3 w-full'>
@@ -177,7 +222,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
         {loading && (
           <div className='flex justify-center mt-4'>
-            <span>Đang upload dữ liệu.</span>
+            <span>Đang xử lý...</span>
             <ClipLoader color='#3B82F6' size={30} />
           </div>
         )}

@@ -26,22 +26,16 @@ export async function POST(req: Request) {
     await Promise.all(
       updatedConversation.users.map(async (user) => {
         if (!user.email) {
-          console.log(`No email for user ${user.id}`)
           return Promise.resolve()
         }
         try {
           await pusherServer.trigger(
             user.email,
-            newMemberIds.includes(user.id) ? 'add_member' : 'conversation:update',
+            newMemberIds.includes(user.id) ? 'conversation:add' : 'conversation:update',
             {
               conversation: updatedConversation,
               ...(newMemberIds.includes(user.id) ? {} : { action: 'member_added', newMemberIds })
             }
-          )
-          console.log(
-            `Triggered ${
-              newMemberIds.includes(user.id) ? 'add_member' : 'conversation:update'
-            } to ${user.email}`
           )
         } catch (error) {
           console.error(`Pusher error for ${user.email}:`, error)
