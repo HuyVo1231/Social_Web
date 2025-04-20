@@ -7,6 +7,7 @@ fal.config({
 
 export async function POST(req: Request) {
   const { prompt } = await req.json()
+  // dev or schnell
   try {
     const result = await fal.subscribe('fal-ai/flux/dev', {
       input: {
