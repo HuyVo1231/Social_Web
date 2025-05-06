@@ -29,6 +29,7 @@ interface CreatePostDialogProps {
 }
 
 const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
+  const MAX_IMAGES = 5
   const { user } = useUserStore()
   const { addPost } = usePostStore()
   const [postText, setPostText] = useState('')
@@ -38,6 +39,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [suggestedCaption, setSuggestedCaption] = useState('')
   const [loading, setLoading] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
+  const [aiImageCount, setAiImageCount] = useState(1)
+  const [videoPrompt, setVideoPrompt] = useState('')
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setLoading(true)
@@ -45,11 +48,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       try {
         const url = await uploadToCloudinary(file)
         if (file.type.startsWith('image/')) {
-          setImagePreviews((prev) => {
-            const updated = [...prev, url]
-            if (updated.length === 1) generateCaption(url)
-            return updated
-          })
+          setImagePreviews((prev) => [...prev, url])
         } else if (file.type.startsWith('video/')) {
           setVideoPreviews((prev) => [...prev, url])
         }
@@ -67,39 +66,23 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     onDrop
   })
 
-  const generateCaption = async (imageUrl: string) => {
-    try {
-      const res = await fetch('/api/generate-caption', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl })
-      })
-      const data = await res.json()
-      if (data?.caption) {
-        setSuggestedCaption(data.caption)
-        toast.success('Caption gợi ý đã sẵn sàng! Nhấn Tab để áp dụng.')
-      }
-    } catch (err) {
-      console.log('err', err)
-      toast.error('Không tạo được caption!')
-    }
-  }
-
   const generateImage = async () => {
-    if (!imagePrompt.trim()) {
-      return toast.error('Vui lòng nhập mô tả để tạo hình ảnh!')
-    }
+    const remaining = MAX_IMAGES - imagePreviews.length
+    if (!imagePrompt.trim()) return toast.error('Vui lòng nhập mô tả để tạo hình ảnh!')
+    if (remaining <= 0) return toast.error(`Bạn chỉ có thể thêm tối đa ${MAX_IMAGES} ảnh!`)
 
+    const numToGenerate = Math.min(aiImageCount, remaining)
     setLoading(true)
+
     try {
       const response = await fetcher('/api/generate-image', {
         method: 'POST',
-        body: JSON.stringify({ prompt: imagePrompt })
+        body: JSON.stringify({ prompt: imagePrompt, num_images: numToGenerate })
       })
 
-      const imageUrl = response?.data?.images?.[0]?.url
-      if (imageUrl) {
-        setImagePreviews((prev) => [...prev, imageUrl])
+      const urls = response?.data?.images?.map((img: any) => img.url).filter(Boolean)
+      if (urls?.length) {
+        setImagePreviews((prev) => [...prev, ...urls.slice(0, remaining)])
         toast.success('Tạo hình ảnh thành công!')
       } else {
         toast.error('Không thể tạo hình ảnh!')
@@ -110,6 +93,32 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     } finally {
       setLoading(false)
       setImagePrompt('')
+    }
+  }
+
+  const generateVideo = async () => {
+    if (!videoPrompt.trim()) return toast.error('Vui lòng nhập mô tả để tạo video!')
+    setLoading(true)
+
+    try {
+      const response = await fetcher('/api/generate-video', {
+        method: 'POST',
+        body: JSON.stringify({ prompt: videoPrompt })
+      })
+
+      const url = response?.data?.video?.url || response?.data?.videos?.[0]?.url
+      if (url) {
+        setVideoPreviews((prev) => [...prev, url])
+        toast.success('Tạo video thành công!')
+      } else {
+        toast.error('Không thể tạo video!')
+      }
+    } catch (error: any) {
+      console.error('Error generating video:', error)
+      toast.error(`Lỗi khi tạo video: ${error.message}`)
+    } finally {
+      setLoading(false)
+      setVideoPrompt('')
     }
   }
 
@@ -160,7 +169,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild />
       <DialogTitle />
-      <DialogContent className='w-full max-w-lg'>
+      <DialogContent className='w-full max-w-lg max-h-[90vh] overflow-y-auto'>
         <h2 className='text-xl font-semibold mb-2 flex justify-center text-gray-900'>
           Create post
         </h2>
@@ -191,26 +200,58 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           onChange={(e) => setPostText(e.target.value)}
           onKeyDown={handleKeyDown}
           className='w-full min-h-[120px] text-lg text-gray-900 bg-transparent focus:ring-0 focus:outline-none border-none placeholder-gray-500'
-          style={{
-            color: postText ? 'inherit' : suggestedCaption ? 'gray' : 'inherit'
-          }}
+          style={{ color: postText ? 'inherit' : suggestedCaption ? 'gray' : 'inherit' }}
         />
 
-        <div className='mt-3'>
-          <Input
-            placeholder='Nhập mô tả để tạo hình ảnh (ví dụ: Một chú mèo bay trên mây, phong cách anime)'
-            value={imagePrompt}
-            onChange={(e) => setImagePrompt(e.target.value)}
-            className='w-full'
-          />
+        {/* IMAGE GENERATE */}
+        <div className='mt-3 space-y-2'>
+          <div className='flex items-center gap-2'>
+            <Input
+              placeholder='Nhập mô tả để tạo hình ảnh...'
+              value={imagePrompt}
+              onChange={(e) => setImagePrompt(e.target.value)}
+              className='flex-1'
+            />
+            <div className='flex items-center gap-1'>
+              <label className='text-sm text-gray-700 whitespace-nowrap'>Số ảnh:</label>
+              <Input
+                type='number'
+                min={1}
+                max={3}
+                value={aiImageCount}
+                onChange={(e) =>
+                  setAiImageCount(Math.min(Math.max(1, parseInt(e.target.value) || 1), 3))
+                }
+                className='w-16 h-9 px-2 text-sm'
+              />
+            </div>
+          </div>
+
           <Button
             onClick={generateImage}
             disabled={loading || !imagePrompt.trim()}
-            className='mt-2 w-full'>
+            className='w-full'>
             {loading ? <ClipLoader color='#fff' size={20} /> : 'Tạo hình ảnh bằng AI'}
           </Button>
         </div>
 
+        {/* VIDEO GENERATE */}
+        <div className='mt-4 space-y-2'>
+          <Input
+            placeholder='Nhập mô tả để tạo video'
+            value={videoPrompt}
+            onChange={(e) => setVideoPrompt(e.target.value)}
+            className='w-full'
+          />
+          <Button
+            disabled={loading || !videoPrompt.trim()}
+            onClick={generateVideo}
+            className='w-full'>
+            Tạo video bằng AI
+          </Button>
+        </div>
+
+        {/* UPLOAD */}
         <div
           {...getRootProps()}
           className='border-2 border-dashed border-gray-300 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-100 mt-3 w-full'>
@@ -221,12 +262,13 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         </div>
 
         {loading && (
-          <div className='flex justify-center mt-4'>
+          <div className='flex justify-center mt-4 gap-2 items-center'>
             <span>Đang xử lý...</span>
-            <ClipLoader color='#3B82F6' size={30} />
+            <ClipLoader color='#3B82F6' size={24} />
           </div>
         )}
 
+        {/* MEDIA PREVIEW */}
         <div className='max-h-[200px] overflow-y-auto flex gap-2 flex-wrap mt-3'>
           {imagePreviews.map((preview, index) => (
             <MediaPreview

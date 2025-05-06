@@ -6,13 +6,13 @@ fal.config({
 })
 
 export async function POST(req: Request) {
-  const { prompt, num_images } = await req.json()
-  // dev or schnell
+  const { prompt } = await req.json()
+
+  // fal-ai/ltx-video-v095 - model generate cho text sang video
   try {
-    const result = await fal.subscribe('fal-ai/flux/dev', {
+    const result = await fal.subscribe('fal-ai/ltx-video-v095', {
       input: {
-        prompt,
-        num_images
+        prompt
       }
     })
     return NextResponse.json(result)

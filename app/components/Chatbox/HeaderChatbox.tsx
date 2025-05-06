@@ -51,7 +51,7 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
         })
       })
 
-      if (!response.ok) {
+      if (!response) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
