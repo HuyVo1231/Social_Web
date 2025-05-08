@@ -54,9 +54,7 @@ const HeaderChatBox: React.FC<HeaderChatBoxProps> = ({
       if (!response) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
-      const data = await response.json()
-      window.location.href = `/video/${conversationId}?token=${data.token}`
+      window.location.href = `/video/${conversationId}?token=${response.token}`
     } catch (error: any) {
       console.error('Video call error:', error)
       setError(error.message || 'Failed to initiate video call')
