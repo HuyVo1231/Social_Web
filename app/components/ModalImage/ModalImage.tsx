@@ -16,14 +16,16 @@ export default function ModalImage({ src, alt = 'Image', className }: ModalImage
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <div className={`cursor-pointer ${className}`} onClick={() => setOpen(true)}>
-          <Image src={src} alt={alt} layout='fill' objectFit='cover' className='rounded-lg' />
+        <div
+          className={`cursor-pointer relative w-full h-full ${className}`}
+          onClick={() => setOpen(true)}>
+          <Image src={src} alt={alt} fill className='rounded-lg object-cover' />
         </div>
       </DialogTrigger>
-      <DialogContent className='max-w p-4 flex flex-col items-center'>
+      <DialogContent className='max-w-full p-4 flex flex-col items-center'>
         <DialogTitle />
-        <div className='relative w-[600px] h-[600px] rounded-lg'>
-          <Image src={src} alt={alt} layout='fill' objectFit='contain' className='rounded-lg' />
+        <div className='relative w-[90vw] max-w-[800px] h-[90vh] max-h-[800px]'>
+          <Image src={src} alt={alt} fill className='rounded-lg object-contain' />
         </div>
       </DialogContent>
     </Dialog>

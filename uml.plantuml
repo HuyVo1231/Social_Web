@@ -1,0 +1,5 @@
+users (id, name, email, emailVerified, verificationToken, image, imageThumbnail, phone, bio, location, work, education, relationship, hobbies, website, skills, hashPassword, createdAt, updatedAt)
+posts (id, body, image, video, createdAt, updatedAt, isPrivate, userId)
+comments (id, body, createdAt, postId, userId)
+likes (id, userId, postId, createdAt)
+friendships (id, createdAt, updatedAt, initiatorId, receiverId, status)
